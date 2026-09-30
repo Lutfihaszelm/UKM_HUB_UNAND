@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/dummy_account.dart';
 import 'auth_state.dart';
 
 final authControllerProvider =
@@ -18,7 +19,7 @@ class AuthController extends Notifier<AuthState> {
   }
 
   /// Returns true on success. Wires up loading/error UI state.
-  /// TODO: replace the simulated delay with a real REST API call
+  /// TODO: replace the dummy-account check with a real REST API call
   /// (POST /auth/login) once the backend contract is defined.
   Future<bool> submitLogin({
     required String emailOrNim,
@@ -33,7 +34,18 @@ class AuthController extends Notifier<AuthState> {
 
     state = state.copyWith(isSubmitting: true, errorMessage: null);
     await Future<void>.delayed(const Duration(milliseconds: 900));
-    state = state.copyWith(isSubmitting: false);
+
+    final matches = emailOrNim.trim().toLowerCase() == DummyAccount.email &&
+        password == DummyAccount.password;
+    if (!matches) {
+      state = state.copyWith(
+        isSubmitting: false,
+        errorMessage: 'Email/NIM atau kata sandi salah.',
+      );
+      return false;
+    }
+
+    state = state.copyWith(isSubmitting: false, user: DummyAccount.user);
     return true;
   }
 }

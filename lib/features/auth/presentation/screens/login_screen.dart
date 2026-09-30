@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/routing/app_routes.dart';
+import '../../../../routes/app_routes.dart';
 import '../../../../core/widgets/coming_soon_screen.dart';
 import '../../../../theme/app_colors.dart';
 import '../../../../theme/app_spacing.dart';
 import '../../../../theme/app_text_styles.dart';
+import '../../../../utils/validators.dart';
 import '../../application/auth_controller.dart';
 import '../widgets/app_logo_badge.dart';
 import '../widgets/auth_text_field.dart';
@@ -21,6 +22,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _emailOrNimController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -32,6 +34,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _handleSubmit() async {
+    final isValid = _formKey.currentState?.validate() ?? false;
+    if (!isValid) return;
+
     final success = await ref.read(authControllerProvider.notifier).submitLogin(
           emailOrNim: _emailOrNimController.text,
           password: _passwordController.text,
@@ -80,86 +85,95 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           borderRadius: BorderRadius.circular(AppRadius.lg),
                           border: Border.all(color: AppColors.borderSubtle),
                         ),
-                        child: Column(
-                          children: [
-                            AuthTextField(
-                              label: 'Email Mahasiswa / NIM',
-                              hintText: 'nama.nim@student.unand.ac.id',
-                              leadingIcon: Icons.badge_outlined,
-                              controller: _emailOrNimController,
-                              keyboardType: TextInputType.emailAddress,
-                              textInputAction: TextInputAction.next,
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            AuthTextField(
-                              label: 'Kata Sandi Portal',
-                              hintText: '••••••••••••',
-                              leadingIcon: Icons.lock_outline,
-                              controller: _passwordController,
-                              obscureText: authState.obscurePassword,
-                              textInputAction: TextInputAction.done,
-                              trailing: IconButton(
-                                icon: Icon(
-                                  authState.obscurePassword
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
-                                  size: 20,
-                                  color: AppColors.iconMuted,
-                                ),
-                                onPressed: () => ref
-                                    .read(authControllerProvider.notifier)
-                                    .toggleObscurePassword(),
+                        child: Form(
+                          key: _formKey,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          child: Column(
+                            children: [
+                              AuthTextField(
+                                label: 'Email Mahasiswa / NIM',
+                                hintText: 'nama.nim@student.unand.ac.id',
+                                leadingIcon: Icons.badge_outlined,
+                                controller: _emailOrNimController,
+                                keyboardType: TextInputType.emailAddress,
+                                textInputAction: TextInputAction.next,
+                                validator: Validators.email,
                               ),
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            Row(
-                              children: [
-                                CircularCheckbox(
-                                  value: authState.rememberMe,
-                                  onChanged: (_) => ref
+                              const SizedBox(height: AppSpacing.md),
+                              AuthTextField(
+                                label: 'Kata Sandi Portal',
+                                hintText: '••••••••••••',
+                                leadingIcon: Icons.lock_outline,
+                                controller: _passwordController,
+                                obscureText: authState.obscurePassword,
+                                textInputAction: TextInputAction.done,
+                                validator: Validators.password,
+                                trailing: IconButton(
+                                  icon: Icon(
+                                    authState.obscurePassword
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                    size: 20,
+                                    color: AppColors.iconMuted,
+                                  ),
+                                  onPressed: () => ref
                                       .read(authControllerProvider.notifier)
-                                      .toggleRememberMe(),
+                                      .toggleObscurePassword(),
                                 ),
-                                const SizedBox(width: AppSpacing.sm),
-                                Text('Ingat saya', style: AppTextStyles.bodyRegular),
-                                const Spacer(),
-                                GestureDetector(
-                                  onTap: () => _openPlaceholder('Lupa Sandi'),
-                                  child: Text('Lupa Sandi?', style: AppTextStyles.link),
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              Row(
+                                children: [
+                                  CircularCheckbox(
+                                    value: authState.rememberMe,
+                                    onChanged: (_) => ref
+                                        .read(authControllerProvider.notifier)
+                                        .toggleRememberMe(),
+                                  ),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Text('Ingat saya', style: AppTextStyles.bodyRegular),
+                                  const Spacer(),
+                                  GestureDetector(
+                                    onTap: () => _openPlaceholder('Lupa Sandi'),
+                                    child: Text('Lupa Sandi?', style: AppTextStyles.link),
+                                  ),
+                                ],
+                              ),
+                              if (authState.errorMessage != null) ...[
+                                const SizedBox(height: AppSpacing.sm),
+                                Text(
+                                  authState.errorMessage!,
+                                  style: AppTextStyles.bodyRegular
+                                      .copyWith(color: AppColors.error),
                                 ),
                               ],
-                            ),
-                            if (authState.errorMessage != null) ...[
-                              const SizedBox(height: AppSpacing.sm),
-                              Text(
-                                authState.errorMessage!,
-                                style: AppTextStyles.bodyRegular.copyWith(color: AppColors.error),
+                              const SizedBox(height: AppSpacing.lg),
+                              GradientButton(
+                                label: 'Masuk Sekarang',
+                                trailingIcon: Icons.arrow_forward_rounded,
+                                isLoading: authState.isSubmitting,
+                                onPressed: _handleSubmit,
+                              ),
+                              const SizedBox(height: AppSpacing.lg),
+                              Row(
+                                children: [
+                                  const Expanded(child: Divider(color: AppColors.borderSubtle)),
+                                  Padding(
+                                    padding:
+                                        const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                                    child:
+                                        Text('ATAU MASUK RESMI VIA', style: AppTextStyles.caption),
+                                  ),
+                                  const Expanded(child: Divider(color: AppColors.borderSubtle)),
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.lg),
+                              SsoButton(
+                                label: 'SSO Universitas Andalas',
+                                onPressed: () => _openPlaceholder('SSO Universitas Andalas'),
                               ),
                             ],
-                            const SizedBox(height: AppSpacing.lg),
-                            GradientButton(
-                              label: 'Masuk Sekarang',
-                              trailingIcon: Icons.arrow_forward_rounded,
-                              isLoading: authState.isSubmitting,
-                              onPressed: _handleSubmit,
-                            ),
-                            const SizedBox(height: AppSpacing.lg),
-                            Row(
-                              children: [
-                                const Expanded(child: Divider(color: AppColors.borderSubtle)),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-                                  child: Text('ATAU MASUK RESMI VIA', style: AppTextStyles.caption),
-                                ),
-                                const Expanded(child: Divider(color: AppColors.borderSubtle)),
-                              ],
-                            ),
-                            const SizedBox(height: AppSpacing.lg),
-                            SsoButton(
-                              label: 'SSO Universitas Andalas',
-                              onPressed: () => _openPlaceholder('SSO Universitas Andalas'),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: AppSpacing.lg),
