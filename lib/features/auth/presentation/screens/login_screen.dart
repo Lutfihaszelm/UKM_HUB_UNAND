@@ -12,7 +12,7 @@ import '../widgets/auth_text_field.dart';
 import '../widgets/circular_checkbox.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/sso_button.dart';
-
+import '../../../../utils/validators.dart';
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -21,6 +21,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _emailOrNimController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -32,6 +33,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _handleSubmit() async {
+    final isValid = _formKey.currentState?.validate() ?? false;
+    if (!isValid) return;
+
     final success = await ref.read(authControllerProvider.notifier).submitLogin(
           emailOrNim: _emailOrNimController.text,
           password: _passwordController.text,
@@ -80,8 +84,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           borderRadius: BorderRadius.circular(AppRadius.lg),
                           border: Border.all(color: AppColors.borderSubtle),
                         ),
-                        child: Column(
-                          children: [
+                        child: Form(
+                          key: _formKey,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          child: Column(
+                            children: [
                             AuthTextField(
                               label: 'Email Mahasiswa / NIM',
                               hintText: 'nama.nim@student.unand.ac.id',
@@ -89,6 +96,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               controller: _emailOrNimController,
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
+                              validator: Validators.email,
                             ),
                             const SizedBox(height: AppSpacing.md),
                             AuthTextField(
@@ -110,6 +118,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     .read(authControllerProvider.notifier)
                                     .toggleObscurePassword(),
                               ),
+                              validator: Validators.password,
                             ),
                             const SizedBox(height: AppSpacing.md),
                             Row(
@@ -155,11 +164,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ],
                             ),
                             const SizedBox(height: AppSpacing.lg),
-                            SsoButton(
-                              label: 'SSO Universitas Andalas',
-                              onPressed: () => _openPlaceholder('SSO Universitas Andalas'),
-                            ),
-                          ],
+                              SsoButton(
+                                label: 'SSO Universitas Andalas',
+                                onPressed: () => _openPlaceholder('SSO Universitas Andalas'),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: AppSpacing.lg),

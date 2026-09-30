@@ -17,6 +17,7 @@ class AuthTextField extends StatelessWidget {
     this.trailing,
     this.keyboardType,
     this.textInputAction,
+    this.validator,
   });
 
   final String label;
@@ -27,6 +28,7 @@ class AuthTextField extends StatelessWidget {
   final Widget? trailing;
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
+  final String? Function(String?)? validator;
 
   @override
   Widget build(BuildContext context) {
@@ -41,13 +43,14 @@ class AuthTextField extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.borderInput),
           ),
-          child: TextField(
+          child: TextFormField(
             controller: controller,
             obscureText: obscureText,
             keyboardType: keyboardType,
             textInputAction: textInputAction,
             style: AppTextStyles.inputText,
             cursorColor: AppColors.accentGreen,
+            validator: validator,
             decoration: InputDecoration(
               hintText: hintText,
               hintStyle: AppTextStyles.inputPlaceholder,
@@ -65,3 +68,4 @@ class AuthTextField extends StatelessWidget {
     );
   }
 }
+
