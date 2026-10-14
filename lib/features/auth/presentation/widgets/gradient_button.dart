@@ -31,6 +31,7 @@ class GradientButton extends StatelessWidget {
           onTap: disabled ? null : onPressed,
           child: Container(
             height: 52,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
               gradient: AppColors.primaryButtonGradient,
               borderRadius: BorderRadius.circular(16),
@@ -46,12 +47,20 @@ class GradientButton extends StatelessWidget {
                     ),
                   )
                 : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(label, style: AppTextStyles.button),
+                      Flexible(
+                        child: Text(
+                          label,
+                          style: AppTextStyles.button,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                       if (trailingIcon != null) ...[
                         const SizedBox(width: 8),
-                        Icon(trailingIcon, size: 18, color: AppColors.textOnButton),
+                        Icon(trailingIcon,
+                            size: 18, color: AppColors.textOnButton),
                       ],
                     ],
                   ),

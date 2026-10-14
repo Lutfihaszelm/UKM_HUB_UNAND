@@ -20,17 +20,26 @@ class SsoButton extends StatelessWidget {
         onTap: onPressed,
         child: Container(
           height: 52,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.borderInput),
           ),
           alignment: Alignment.center,
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.school_rounded, size: 20, color: AppColors.accentGold),
+              const Icon(Icons.school_rounded,
+                  size: 20, color: AppColors.accentGold),
               const SizedBox(width: 10),
-              Text(label, style: AppTextStyles.buttonSecondary),
+              Flexible(
+                child: Text(
+                  label,
+                  style: AppTextStyles.buttonSecondary,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
         ),

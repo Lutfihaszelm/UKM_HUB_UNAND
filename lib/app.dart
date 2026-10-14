@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'core/routing/app_routes.dart';
 import 'core/widgets/coming_soon_screen.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
+import 'features/jelajahi_ukm/presentation/screens/jelajahi_ukm_screen.dart';
 import 'features/auth/presentation/screens/splash_screen.dart';
 import 'theme/app_theme.dart';
 
@@ -15,12 +16,14 @@ class UkmHubApp extends StatelessWidget {
       title: 'UKM Hub Unand',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
-      initialRoute: AppRoutes.splash,
+      initialRoute: AppRoutes.jelajahiUkm,
       routes: {
         AppRoutes.splash: (_) => const SplashScreen(),
         AppRoutes.login: (_) => const LoginScreen(),
-        AppRoutes.register: (_) => const ComingSoonScreen(title: 'Aktivasi Akun'),
-        AppRoutes.home: (_) => const ComingSoonScreen(title: 'Home'),
+        AppRoutes.register: (_) =>
+            const ComingSoonScreen(title: 'Aktivasi Akun'),
+        AppRoutes.home: (_) => const JelajahiUkmScreen(),
+        AppRoutes.jelajahiUkm: (_) => const JelajahiUkmScreen(),
       },
     );
   }
