@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../theme/app_colors.dart';
 import '../../../../theme/app_text_styles.dart';
 
-/// Full-width primary CTA with the mint-green gradient used across the
-/// auth flow (e.g. "Masuk Sekarang").
+/// Full-width primary CTA with Emerald Unand green (e.g. "Masuk Sekarang ->").
 class GradientButton extends StatelessWidget {
   const GradientButton({
     super.key,
@@ -27,13 +26,20 @@ class GradientButton extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           onTap: disabled ? null : onPressed,
           child: Container(
-            height: 52,
+            height: 50,
             decoration: BoxDecoration(
-              gradient: AppColors.primaryButtonGradient,
-              borderRadius: BorderRadius.circular(16),
+              color: AppColors.primaryGreenDark,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primaryGreenDark.withValues(alpha: 0.25),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             alignment: Alignment.center,
             child: isLoading
@@ -42,16 +48,23 @@ class GradientButton extends StatelessWidget {
                     width: 22,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.4,
-                      valueColor: AlwaysStoppedAnimation(AppColors.textOnButton),
+                      valueColor: AlwaysStoppedAnimation(Colors.white),
                     ),
                   )
                 : Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(label, style: AppTextStyles.button),
+                      Text(
+                        label,
+                        style: AppTextStyles.button.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
                       if (trailingIcon != null) ...[
                         const SizedBox(width: 8),
-                        Icon(trailingIcon, size: 18, color: AppColors.textOnButton),
+                        Icon(trailingIcon, size: 18, color: Colors.white),
                       ],
                     ],
                   ),

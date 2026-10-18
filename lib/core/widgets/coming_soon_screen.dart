@@ -13,21 +13,25 @@ class ComingSoonScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgGradientBottom,
-      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
+      backgroundColor: Colors.white,
+      appBar: AppBar(backgroundColor: Colors.white, elevation: 0),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.construction_rounded, color: AppColors.accentGreen, size: 40),
+              const Icon(Icons.construction_rounded, color: AppColors.primaryGreenDark, size: 40),
               const SizedBox(height: AppSpacing.md),
-              Text(title, style: AppTextStyles.h2, textAlign: TextAlign.center),
+              Text(
+                title,
+                style: AppTextStyles.h2.copyWith(color: const Color(0xFF0F172A)),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 'Halaman ini belum tersedia.',
-                style: AppTextStyles.bodyRegular,
+                style: AppTextStyles.bodyRegular.copyWith(color: const Color(0xFF64748B)),
                 textAlign: TextAlign.center,
               ),
             ],

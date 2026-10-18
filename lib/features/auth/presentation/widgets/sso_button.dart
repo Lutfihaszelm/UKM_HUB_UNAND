@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../../theme/app_colors.dart';
 import '../../../../theme/app_text_styles.dart';
 
-/// Outlined secondary button for "SSO Universitas Andalas".
+/// Outlined button for "SSO Universitas Andalas" with white surface and subtle border.
 class SsoButton extends StatelessWidget {
   const SsoButton({super.key, required this.label, required this.onPressed});
 
@@ -13,24 +12,30 @@ class SsoButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.surfaceInput,
-      borderRadius: BorderRadius.circular(16),
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         onTap: onPressed,
         child: Container(
-          height: 52,
+          height: 50,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.borderInput),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
           alignment: Alignment.center,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.school_rounded, size: 20, color: AppColors.accentGold),
+              const Icon(Icons.school_rounded, size: 20, color: Color(0xFFD97706)),
               const SizedBox(width: 10),
-              Text(label, style: AppTextStyles.buttonSecondary),
+              Text(
+                label,
+                style: AppTextStyles.buttonSecondary.copyWith(
+                  color: const Color(0xFF1E293B),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
         ),

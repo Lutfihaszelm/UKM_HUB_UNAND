@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../theme/app_colors.dart';
 
-/// Small filled-circle checkbox used for "Ingat saya".
+/// Small checkbox used for "Ingat saya".
 class CircularCheckbox extends StatelessWidget {
   const CircularCheckbox({super.key, required this.value, required this.onChanged});
 
@@ -15,18 +15,18 @@ class CircularCheckbox extends StatelessWidget {
       onTap: () => onChanged(!value),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        width: 22,
-        height: 22,
+        width: 20,
+        height: 20,
         decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: value ? AppColors.accentGreen : Colors.transparent,
+          borderRadius: BorderRadius.circular(4),
+          color: value ? AppColors.primaryGreenDark : Colors.transparent,
           border: Border.all(
-            color: value ? AppColors.accentGreen : AppColors.borderInput,
+            color: value ? AppColors.primaryGreenDark : const Color(0xFF94A3B8),
             width: 1.5,
           ),
         ),
         child: value
-            ? const Icon(Icons.check, size: 14, color: AppColors.textOnButton)
+            ? const Icon(Icons.check, size: 14, color: Colors.white)
             : null,
       ),
     );

@@ -6,15 +6,24 @@ import 'app_text_styles.dart';
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get dark {
-    final base = ThemeData.dark(useMaterial3: true);
+  static ThemeData get light {
+    final base = ThemeData.light(useMaterial3: true);
     return base.copyWith(
-      scaffoldBackgroundColor: AppColors.bgGradientBottom,
+      scaffoldBackgroundColor: AppColors.backgroundWhite,
       colorScheme: base.colorScheme.copyWith(
         primary: AppColors.primaryGreenDark,
-        secondary: AppColors.accentGreen,
+        secondary: AppColors.primaryGreenLight,
         surface: AppColors.surfaceCard,
         error: AppColors.error,
+        onPrimary: Colors.white,
+        onSurface: AppColors.textPrimary,
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
       ),
       textTheme: base.textTheme.apply(
         bodyColor: AppColors.textPrimary,
@@ -22,15 +31,18 @@ class AppTheme {
       ),
       textSelectionTheme: const TextSelectionThemeData(
         cursorColor: AppColors.accentGreen,
-        selectionColor: Color(0x554ADE9C),
+        selectionColor: Color(0x331B5E3C),
         selectionHandleColor: AppColors.accentGreen,
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: AppColors.surfaceCard,
-        contentTextStyle: AppTextStyles.bodyMedium,
+        backgroundColor: const Color(0xFF1E293B),
+        contentTextStyle: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
+
+  // Backward compatibility: alias dark to light as requested
+  static ThemeData get dark => light;
 }

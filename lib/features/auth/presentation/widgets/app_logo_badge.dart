@@ -2,12 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../theme/app_colors.dart';
 
-/// Glowing logo badge shown on Splash & Login.
-///
-/// NOTE: renders a placeholder campus icon since the real UKM Hub Unand
-/// logo asset hasn't been exported from Figma yet. Once available, drop
-/// it at `assets/images/2.0x/logo.webp` (+ 3.0x) and swap the [Icon]
-/// below for an `Image.asset('assets/images/logo.webp')`.
+/// Logo badge shown on Splash & Login using the official Unand Building emblem.
 class AppLogoBadge extends StatelessWidget {
   const AppLogoBadge({
     super.key,
@@ -25,23 +20,38 @@ class AppLogoBadge extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
+        color: Colors.white,
         shape: isCircle ? BoxShape.circle : BoxShape.rectangle,
         borderRadius: isCircle ? null : BorderRadius.circular(radius),
-        border: Border.all(color: AppColors.accentGreen.withValues(alpha: 0.4)),
+        border: Border.all(color: AppColors.borderSubtle),
         boxShadow: [
           BoxShadow(
-            color: AppColors.accentGreen.withValues(alpha: 0.35),
-            blurRadius: 32,
-            spreadRadius: 4,
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 16,
+            spreadRadius: 2,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       alignment: Alignment.center,
-      child: Icon(
-        Icons.apartment_rounded,
-        size: size * 0.42,
-        color: AppColors.accentGold,
+      child: ClipRRect(
+        borderRadius: isCircle
+            ? BorderRadius.circular(size / 2)
+            : BorderRadius.circular(radius),
+        child: Padding(
+          padding: EdgeInsets.all(size * 0.08),
+          child: Image.asset(
+            'assets/images/Logo_PKM_Hub_Unand-removebg-preview.png',
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return Icon(
+                Icons.apartment_rounded,
+                size: size * 0.5,
+                color: AppColors.primaryGreenDark,
+              );
+            },
+          ),
+        ),
       ),
     );
   }
