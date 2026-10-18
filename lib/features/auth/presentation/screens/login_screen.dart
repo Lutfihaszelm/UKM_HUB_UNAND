@@ -13,6 +13,7 @@ import '../widgets/circular_checkbox.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/sso_button.dart';
 import '../../../../utils/validators.dart';
+
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -56,43 +57,67 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final authState = ref.watch(authControllerProvider);
 
     return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
-        child: SafeArea(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: SizedBox.expand(
           child: Column(
             children: [
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: AppSpacing.xl),
-                      const AppLogoBadge(size: 76),
-                      const SizedBox(height: AppSpacing.md),
-                      Text('Masuk ke UKM Hub', style: AppTextStyles.h1),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text(
-                        'Akses open recruitment UKM & event kampus Universitas Andalas',
-                        style: AppTextStyles.bodyRegular,
-                        textAlign: TextAlign.center,
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 480),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const SizedBox(height: AppSpacing.xl),
+                          const AppLogoBadge(size: 68),
+                          const SizedBox(height: AppSpacing.md),
+                          Text(
+                            'Login MyPKM',
+                            style: AppTextStyles.h1.copyWith(
+                              color: const Color(0xFF0F172A),
+                              fontWeight: FontWeight.w800,
+                              fontSize: 24,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            ' Ayo Kenali PKM di Universitas Andalas',
+                            style: AppTextStyles.bodyRegular.copyWith(
+                              color: const Color(0xFF64748B),
+                              fontSize: 13,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+
+                    // Card Form Putih dengan Border Halus & Soft Shadow
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 20,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: AppSpacing.lg),
-                      Container(
-                        padding: const EdgeInsets.all(AppSpacing.lg),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceCard.withValues(alpha: 0.75),
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          border: Border.all(color: AppColors.borderSubtle),
-                        ),
-                        child: Form(
-                          key: _formKey,
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
-                          child: Column(
-                            children: [
+                      child: Form(
+                        key: _formKey,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        child: Column(
+                          children: [
                             AuthTextField(
-                              label: 'Email Mahasiswa / NIM',
-                              hintText: 'nama.nim@student.unand.ac.id',
-                              leadingIcon: Icons.badge_outlined,
+                              label: 'Email Mahasiswa',
+                              hintText: 'Masukkan Email Anda',
+                              leadingIcon: Icons.mail_outline_rounded,
                               controller: _emailOrNimController,
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
@@ -102,7 +127,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             AuthTextField(
                               label: 'Kata Sandi Portal',
                               hintText: '••••••••••••',
-                              leadingIcon: Icons.lock_outline,
+                              leadingIcon: Icons.lock_outline_rounded,
                               controller: _passwordController,
                               obscureText: authState.obscurePassword,
                               textInputAction: TextInputAction.done,
@@ -112,7 +137,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       ? Icons.visibility_outlined
                                       : Icons.visibility_off_outlined,
                                   size: 20,
-                                  color: AppColors.iconMuted,
+                                  color: const Color(0xFF64748B),
                                 ),
                                 onPressed: () => ref
                                     .read(authControllerProvider.notifier)
@@ -130,11 +155,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       .toggleRememberMe(),
                                 ),
                                 const SizedBox(width: AppSpacing.sm),
-                                Text('Ingat saya', style: AppTextStyles.bodyRegular),
+                                Text(
+                                  'Ingat saya',
+                                  style: AppTextStyles.bodyRegular.copyWith(
+                                    color: const Color(0xFF334155),
+                                    fontSize: 13,
+                                  ),
+                                ),
                                 const Spacer(),
                                 GestureDetector(
                                   onTap: () => _openPlaceholder('Lupa Sandi'),
-                                  child: Text('Lupa Sandi?', style: AppTextStyles.link),
+                                  child: Text(
+                                    'Lupa Sandi?',
+                                    style: AppTextStyles.link.copyWith(
+                                      color: const Color(0xFF1B5E3C),
+                                      fontSize: 13,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -142,7 +179,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               const SizedBox(height: AppSpacing.sm),
                               Text(
                                 authState.errorMessage!,
-                                style: AppTextStyles.bodyRegular.copyWith(color: AppColors.error),
+                                style: AppTextStyles.bodyRegular.copyWith(
+                                  color: AppColors.error,
+                                ),
                               ),
                             ],
                             const SizedBox(height: AppSpacing.lg),
@@ -155,46 +194,70 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             const SizedBox(height: AppSpacing.lg),
                             Row(
                               children: [
-                                const Expanded(child: Divider(color: AppColors.borderSubtle)),
+                                const Expanded(
+                                  child: Divider(color: Color(0xFFE2E8F0)),
+                                ),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-                                  child: Text('ATAU MASUK RESMI VIA', style: AppTextStyles.caption),
+                                  child: Text(
+                                    'ATAU MASUK RESMI VIA',
+                                    style: AppTextStyles.caption.copyWith(
+                                      color: const Color(0xFF94A3B8),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ),
-                                const Expanded(child: Divider(color: AppColors.borderSubtle)),
+                                const Expanded(
+                                  child: Divider(color: Color(0xFFE2E8F0)),
+                                ),
                               ],
                             ),
                             const SizedBox(height: AppSpacing.lg),
-                              SsoButton(
-                                label: 'SSO Universitas Andalas',
-                                onPressed: () => _openPlaceholder('SSO Universitas Andalas'),
-                              ),
-                            ],
-                          ),
+                            SsoButton(
+                              label: 'SSO Universitas Andalas',
+                              onPressed: () => _openPlaceholder('SSO Universitas Andalas'),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.lg),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('Mahasiswa baru belum punya akun? ', style: AppTextStyles.bodyRegular),
-                          GestureDetector(
-                            onTap: () => Navigator.of(context).pushNamed(AppRoutes.register),
-                            child: Text('Aktivasi Akun', style: AppTextStyles.link),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          'Mahasiswa baru belum punya akun? ',
+                          style: AppTextStyles.bodyRegular.copyWith(
+                            color: const Color(0xFF64748B),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                    ],
-                  ),
+                        ),
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).pushNamed(AppRoutes.register),
+                          child: Text(
+                            'Aktivasi Akun',
+                            style: AppTextStyles.link.copyWith(
+                              color: const Color(0xFF1B5E3C),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
                 ),
               ),
-              _AuthFooter(onTap: _openPlaceholder),
-            ],
+            ),
           ),
         ),
-      ),
-    );
-  }
+        _AuthFooter(onTap: _openPlaceholder),
+      ],
+    ),
+  ),
+),
+);
+}
 }
 
 class _AuthFooter extends StatelessWidget {
@@ -207,7 +270,10 @@ class _AuthFooter extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-      color: AppColors.surfaceFooter,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -217,7 +283,7 @@ class _AuthFooter extends StatelessWidget {
             onTap: () => onTap('Helpdesk IT Kampus'),
           ),
           const SizedBox(width: AppSpacing.md),
-          Text('•', style: AppTextStyles.caption),
+          Text('•', style: AppTextStyles.caption.copyWith(color: const Color(0xFFCBD5E1))),
           const SizedBox(width: AppSpacing.md),
           _FooterLink(
             icon: Icons.shield_outlined,
@@ -244,9 +310,15 @@ class _FooterLink extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color: AppColors.textFooter),
+          Icon(icon, size: 14, color: const Color(0xFF64748B)),
           const SizedBox(width: 6),
-          Text(label, style: AppTextStyles.caption),
+          Text(
+            label,
+            style: AppTextStyles.caption.copyWith(
+              color: const Color(0xFF64748B),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );

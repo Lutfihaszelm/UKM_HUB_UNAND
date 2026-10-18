@@ -41,25 +41,37 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
-        child: SafeArea(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: SizedBox.expand(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const Spacer(flex: 3),
-                const AppLogoBadge(size: 96, isCircle: false),
+                const AppLogoBadge(size: 100, isCircle: false),
                 const SizedBox(height: AppSpacing.lg),
                 RichText(
                   textAlign: TextAlign.center,
                   text: TextSpan(
-                    style: AppTextStyles.h1.copyWith(fontSize: 26, letterSpacing: 0.5),
-                    children: [
-                      const TextSpan(text: 'UKM HUB '),
+                    style: AppTextStyles.h1.copyWith(
+                      fontSize: 26,
+                      letterSpacing: 0.5,
+                      color: AppColors.primaryGreenDark,
+                    ),
+                    children: const [
+                      TextSpan(
+                        text: 'MYPKM',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
                       TextSpan(
                         text: 'UNAND',
-                        style: TextStyle(color: AppColors.accentGreen),
+                        style: TextStyle(
+                          color: Color(0xFF2E7D32),
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ],
                   ),
@@ -67,20 +79,23 @@ class _SplashScreenState extends State<SplashScreen>
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   'Portal Organisasi & Kegiatan Mahasiswa',
-                  style: AppTextStyles.bodyRegular,
+                  style: AppTextStyles.bodyRegular.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 6),
                   decoration: BoxDecoration(
+                    color: AppColors.surfaceBadge,
                     borderRadius: BorderRadius.circular(AppRadius.pill),
-                    border: Border.all(color: AppColors.accentGreen.withValues(alpha: 0.5)),
+                    border: Border.all(color: const Color(0xFFC8E6C9)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.school_rounded, size: 14, color: AppColors.accentGreen),
+                      const Icon(Icons.school_rounded, size: 14, color: AppColors.primaryGreenDark),
                       const SizedBox(width: 6),
                       Text('Universitas Andalas', style: AppTextStyles.badge),
                     ],
@@ -90,35 +105,26 @@ class _SplashScreenState extends State<SplashScreen>
                 AnimatedBuilder(
                   animation: _progressController,
                   builder: (context, _) {
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: _progressController.value,
-                        minHeight: 4,
-                        backgroundColor: AppColors.surfaceInput,
-                        valueColor: const AlwaysStoppedAnimation(AppColors.accentGreen),
+                    return SizedBox(
+                      width: 140,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: _progressController.value,
+                          minHeight: 4,
+                          backgroundColor: const Color(0xFFE2E8F0),
+                          valueColor: const AlwaysStoppedAnimation(AppColors.primaryGreenDark),
+                        ),
                       ),
                     );
                   },
                 ),
                 const SizedBox(height: AppSpacing.md),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: const BoxDecoration(
-                        color: AppColors.accentGreen,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text('Menghubungkan ke Kampus...', style: AppTextStyles.caption),
-                  ],
+                Text(
+                  'v1.0.0 • Made for Student Pulse',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.textPlaceholder),
+                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                Text('v1.0.0 • Limau Manis Campus Edition', style: AppTextStyles.caption),
                 const SizedBox(height: AppSpacing.lg),
               ],
             ),
