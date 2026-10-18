@@ -46,3 +46,5 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+.PRD_UKM_Hub_Unand_v2.docx
