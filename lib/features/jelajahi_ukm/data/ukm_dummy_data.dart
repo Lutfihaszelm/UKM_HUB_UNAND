@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../../models/ukm.dart';
 
@@ -6,125 +6,183 @@ import '../../../models/ukm.dart';
 /// Kept as a plain constant list — no backend or database needed for FR-01.
 const List<Ukm> kDummyUkmList = [
   Ukm(
+    id: 'ukm-01',
     name: 'UKPM Genta Andalas',
     description: 'Jurnalis kampus, nulis berita & liputan acara.',
     icon: Icons.newspaper_rounded,
-    color: Color(0xFF1E88E5), // Jurnalistik: biru
+    color: Color(0xFF1E88E5),
+    kategori: 'Media',
+    contact: '@gentaandalas',
   ),
   Ukm(
+    id: 'ukm-02',
     name: 'UKM Seni (UKS)',
-    description:
-        'Wadah seni dengan divisi vokal, teater, musik, tari, seni rupa.',
+    description: 'Wadah seni dengan divisi vokal, teater, musik, tari, seni rupa.',
     icon: Icons.palette_rounded,
-    color: Color(0xFF8E24AA), // Seni: ungu
+    color: Color(0xFF8E24AA),
+    kategori: 'Seni',
+    contact: '@ukmseni.unand',
   ),
   Ukm(
+    id: 'ukm-03',
     name: 'FKI Rabbani',
     description: 'Dakwah Islam & kajian keagamaan kampus.',
     icon: Icons.auto_stories_rounded,
-    color: Color(0xFF16A34A), // Keislaman: hijau
+    color: Color(0xFF16A34A),
+    kategori: 'Keagamaan',
+    contact: '@fkirabbani',
   ),
   Ukm(
+    id: 'ukm-04',
     name: 'UKM Olahraga (UKO)',
     description: 'Olahraga beragam: futsal, basket, voli, badminton, dll.',
     icon: Icons.emoji_events_rounded,
-    color: Color(0xFFEA580C), // Olahraga: oranye
+    color: Color(0xFFEA580C),
+    kategori: 'Olahraga',
+    contact: '@uko.unand',
   ),
   Ukm(
+    id: 'ukm-05',
     name: 'AIESEC',
     description: 'Kepemimpinan & pertukaran pelajar internasional.',
     icon: Icons.public_rounded,
-    color: Color(0xFF0284C7), // Internasional / kepemimpinan: biru muda
+    color: Color(0xFF0284C7),
+    kategori: 'Kepemimpinan',
+    contact: '@aiesec.unand',
   ),
   Ukm(
+    id: 'ukm-06',
     name: 'MAPALA UNAND',
     description: 'Pencinta alam, panjat tebing & aktivitas alam liar.',
     icon: Icons.terrain_rounded,
-    color: Color(0xFF2D6A4F), // Pencinta alam: hijau alam
+    color: Color(0xFF2D6A4F),
+    kategori: 'Alam',
+    contact: '@mapala.unand',
   ),
   Ukm(
+    id: 'ukm-07',
     name: 'Neo Telemetri',
     description: 'IT, robotika, multimedia & teknologi informasi.',
     icon: Icons.computer_rounded,
-    color: Color(0xFF0D9488), // Teknologi: teal
+    color: Color(0xFF0D9488),
+    kategori: 'Teknologi',
+    contact: '@neotelemetri',
   ),
   Ukm(
+    id: 'ukm-08',
     name: 'Pandekar',
     description: 'Bela diri silat & kesenian tradisional Minangkabau.',
     icon: Icons.sports_martial_arts_rounded,
-    color: Color(0xFFF97316), // Bela diri: oranye
+    color: Color(0xFFF97316),
+    kategori: 'Olahraga',
+    contact: '@pandekar.unand',
   ),
   Ukm(
+    id: 'ukm-09',
     name: 'UKM PHP',
     description: 'Pengenalan hukum & politik, diskusi isu-isu aktual.',
     icon: Icons.gavel_rounded,
-    color: Color(0xFF3949AB), // Hukum & Politik: indigo
+    color: Color(0xFF3949AB),
+    kategori: 'Sosial',
+    contact: '@ukmphp.unand',
   ),
   Ukm(
+    id: 'ukm-10',
     name: 'KSR PMI Unit UNAND',
     description: 'Relawan kesehatan & bantuan bencana kampus.',
     icon: Icons.local_hospital_rounded,
-    color: Color(0xFFE11D48), // Kemanusiaan: merah
+    color: Color(0xFFE11D48),
+    kategori: 'Kemanusiaan',
+    contact: '@ksrpmi.unand',
   ),
   Ukm(
+    id: 'ukm-11',
     name: 'KOPMA',
     description: 'Koperasi mahasiswa, belajar wirausaha & manajemen bisnis.',
     icon: Icons.store_rounded,
-    color: Color(0xFFD97706), // Kewirausahaan: amber
+    color: Color(0xFFD97706),
+    kategori: 'Kewirausahaan',
+    contact: '@kopma.unand',
   ),
   Ukm(
+    id: 'ukm-12',
     name: 'Andalas Sinematografi',
     description: 'Produksi film, videografi & editing multimedia.',
     icon: Icons.videocam_rounded,
-    color: Color(0xFF7C3AED), // Sinematografi: ungu
+    color: Color(0xFF7C3AED),
+    kategori: 'Media',
+    contact: '@sinematografi.unand',
   ),
   Ukm(
+    id: 'ukm-13',
     name: 'UKM Penalaran',
     description: 'Riset ilmiah, karya tulis & diskusi kritis.',
     icon: Icons.menu_book_rounded,
-    color: Color(0xFF4338CA), // Penalaran: indigo
+    color: Color(0xFF4338CA),
+    kategori: 'Akademik',
+    contact: '@ukmpenalaran',
   ),
   Ukm(
+    id: 'ukm-14',
     name: 'UKM PIKA',
-    description: 'Pengembangan ilmu Al-Qur\'an, tahsin & tilawah.',
+    description: "Pengembangan ilmu Al-Qur'an, tahsin & tilawah.",
     icon: Icons.mosque_rounded,
-    color: Color(0xFF059669), // Al-Qur'an: hijau
+    color: Color(0xFF059669),
+    kategori: 'Keagamaan',
+    contact: '@ukmpika',
   ),
   Ukm(
+    id: 'ukm-15',
     name: 'PIKMAG',
     description: 'Konseling mahasiswa & layanan kesejahteraan kampus.',
     icon: Icons.support_agent_rounded,
-    color: Color(0xFFE11D48), // Kemanusiaan / kesehatan: merah
+    color: Color(0xFFE11D48),
+    kategori: 'Sosial',
+    contact: '@pikmag.unand',
   ),
   Ukm(
+    id: 'ukm-16',
     name: 'HIPMI PT UNAND',
-    description: 'Jaringan pengusuda muda & pengembangan wirausaha.',
+    description: 'Jaringan pengusaha muda & pengembangan wirausaha.',
     icon: Icons.business_center_rounded,
-    color: Color(0xFFB45309), // Kewirausahaan: amber
+    color: Color(0xFFB45309),
+    kategori: 'Kewirausahaan',
+    contact: '@hipmipt.unand',
   ),
   Ukm(
+    id: 'ukm-17',
     name: 'Kosbema',
     description: 'Siaga bencana & penanggulangan bencana alam kampus.',
     icon: Icons.health_and_safety_rounded,
-    color: Color(0xFF15803D), // Kebencanaan: hijau alam
+    color: Color(0xFF15803D),
+    kategori: 'Kemanusiaan',
+    contact: '@kosbema.unand',
   ),
   Ukm(
+    id: 'ukm-18',
     name: 'ADS (Andalas Debating Society)',
     description: 'Debat Bahasa Inggris & public speaking.',
     icon: Icons.record_voice_over_rounded,
-    color: Color(0xFF4F46E5), // Debat: indigo
+    color: Color(0xFF4F46E5),
+    kategori: 'Akademik',
+    contact: '@ads.unand',
   ),
   Ukm(
+    id: 'ukm-19',
     name: 'Pramuka (Racana Swarnadwipa)',
-    description:
-        'Proses pendidikan di luar lingkungan melalui kegiatan yang beragam.',
+    description: 'Proses pendidikan di luar lingkungan melalui kegiatan yang beragam.',
     icon: Icons.explore_rounded,
-    color: Color(0xFF8D6E63), // Pramuka: warna bumi
+    color: Color(0xFF8D6E63),
+    kategori: 'Kepemimpinan',
+    contact: '@pramuka.unand',
   ),
   Ukm(
+    id: 'ukm-20',
     name: 'Menwa (Resimen Mahasiswa)',
     description: 'Latihan disiplin militer & pengamanan kampus.',
     icon: Icons.military_tech_rounded,
-    color: Color(0xFF1E3A8A), // Menwa: biru tua
+    color: Color(0xFF1E3A8A),
+    kategori: 'Kepemimpinan',
+    contact: '@menwa.unand',
   ),
 ];

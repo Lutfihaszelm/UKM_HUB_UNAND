@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../application/follow_provider.dart';
 import '../../application/jelajahi_ukm_provider.dart';
+import '../../application/notification_provider.dart';
 import '../widgets/ukm_card.dart';
+import 'feed_screen.dart';
+import 'notification_screen.dart';
+import 'ukm_detail_screen.dart';
 
 /// FR-01: Jelajahi & Cari UKM screen.
 ///
@@ -13,8 +18,14 @@ import '../widgets/ukm_card.dart';
 /// - Proportional, comfortably padded cards with wrapped descriptions
 /// - Desktop-responsive layout centered and constrained to a comfortable width
 /// - Adaptive sliver layout that gracefully handles keyboard open states without overflow
+/// - Interactive cards that navigate to FR-02 UkmDetailScreen
 class JelajahiUkmScreen extends ConsumerStatefulWidget {
-  const JelajahiUkmScreen({super.key});
+  const JelajahiUkmScreen({
+    super.key,
+    this.showBottomNav = true,
+  });
+
+  final bool showBottomNav;
 
   @override
   ConsumerState<JelajahiUkmScreen> createState() => _JelajahiUkmScreenState();
@@ -32,6 +43,9 @@ class _JelajahiUkmScreenState extends ConsumerState<JelajahiUkmScreen> {
   @override
   Widget build(BuildContext context) {
     final filteredList = ref.watch(filteredUkmListProvider);
+    final followedState = ref.watch(followedUkmIdsProvider);
+    final followedIds = followedState.value ?? {};
+    final unreadCount = ref.watch(unreadNotificationCountProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -48,28 +62,54 @@ class _JelajahiUkmScreenState extends ConsumerState<JelajahiUkmScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Jelajahi UKM',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF111827),
-                            letterSpacing: -0.5,
-                          ),
+                        Row(
+                          children: [
+                            const Expanded(
+                              child: Text(
+                                'Jelajahi UKM',
+                                style: TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF111827),
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: Badge(
+                                isLabelVisible: unreadCount > 0,
+                                label: Text('$unreadCount'),
+                                child: const Icon(
+                                  Icons.notifications_outlined,
+                                  color: Color(0xFF1E293B),
+                                  size: 24,
+                                ),
+                              ),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const NotificationScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 6),
                         const Text(
-                          'Kenali berbagai organisasi dan kegiatan mahasiswa di Universitas Andalas.',
+                          'Temukan dan ikuti unit kegiatan mahasiswa di Universitas Andalas sesuai minatmu.',
                           style: TextStyle(
-                            fontSize: 15,
+                            fontSize: 14,
                             fontWeight: FontWeight.w400,
                             color: Color(0xFF64748B),
                             height: 1.4,
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 18),
 
-                        // ── Search field ──
+                        // ── Search Field with clear button ──
                         TextField(
                           controller: _searchController,
                           onChanged: (value) {
@@ -99,6 +139,22 @@ class _JelajahiUkmScreenState extends ConsumerState<JelajahiUkmScreen> {
                               minWidth: 48,
                               minHeight: 48,
                             ),
+                            suffixIcon: _searchController.text.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(
+                                      Icons.close_rounded,
+                                      color: Color(0xFF94A3B8),
+                                      size: 20,
+                                    ),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      ref
+                                          .read(searchQueryProvider.notifier)
+                                          .update('');
+                                      setState(() {});
+                                    },
+                                  )
+                                : null,
                             filled: true,
                             fillColor: Colors.white,
                             contentPadding: const EdgeInsets.symmetric(
@@ -214,7 +270,19 @@ class _JelajahiUkmScreenState extends ConsumerState<JelajahiUkmScreen> {
                       itemCount: filteredList.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 14),
                       itemBuilder: (context, index) {
-                        return UkmCard(ukm: filteredList[index]);
+                        final ukm = filteredList[index];
+                        final isFollowing = followedIds.contains(ukm.id);
+                        return UkmCard(
+                          ukm: ukm,
+                          isFollowing: isFollowing,
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => UkmDetailScreen(ukm: ukm),
+                              ),
+                            );
+                          },
+                        );
                       },
                     ),
                   ),
@@ -224,40 +292,55 @@ class _JelajahiUkmScreenState extends ConsumerState<JelajahiUkmScreen> {
         ),
       ),
 
-      // ── Bottom navigation matching the original design ──
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1, // UKM tab is active
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        elevation: 8,
-        selectedItemColor: const Color(0xFF2E7D6F),
-        unselectedItemColor: const Color(0xFF94A3B8),
-        selectedFontSize: 12,
-        unselectedFontSize: 12,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home_rounded),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.apps_outlined),
-            activeIcon: Icon(Icons.apps_rounded),
-            label: 'UKM',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today_outlined),
-            activeIcon: Icon(Icons.calendar_today_rounded),
-            label: 'Kegiatan',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person_rounded),
-            label: 'Profil',
-          ),
-        ],
-      ),
+      // ── Standalone Bottom Navigation ──
+      bottomNavigationBar: widget.showBottomNav
+          ? BottomNavigationBar(
+              currentIndex: 1, // UKM tab is active
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: Colors.white,
+              elevation: 8,
+              selectedItemColor: const Color(0xFF2E7D6F),
+              unselectedItemColor: const Color(0xFF94A3B8),
+              selectedFontSize: 12,
+              unselectedFontSize: 12,
+              selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+              onTap: (index) {
+                if (index == 0) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const FeedScreen()),
+                  );
+                } else if (index == 2) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const NotificationScreen(),
+                    ),
+                  );
+                }
+              },
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.home_outlined),
+                  activeIcon: Icon(Icons.home_rounded),
+                  label: 'Beranda',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.apps_outlined),
+                  activeIcon: Icon(Icons.apps_rounded),
+                  label: 'UKM',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.notifications_outlined),
+                  activeIcon: Icon(Icons.notifications_rounded),
+                  label: 'Notifikasi',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.person_outline),
+                  activeIcon: Icon(Icons.person_rounded),
+                  label: 'Profil',
+                ),
+              ],
+            )
+          : null,
     );
   }
 }
