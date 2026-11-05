@@ -310,11 +310,7 @@ class _JelajahiUkmScreenState extends ConsumerState<JelajahiUkmScreen> {
                     MaterialPageRoute(builder: (_) => const FeedScreen()),
                   );
                 } else if (index == 2) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const NotificationScreen(),
-                    ),
-                  );
+                  // Menu ketiga (Slot Open Recruitment) dinonaktifkan sementara di branch Modul 1
                 }
               },
               items: const [
@@ -329,9 +325,9 @@ class _JelajahiUkmScreenState extends ConsumerState<JelajahiUkmScreen> {
                   label: 'UKM',
                 ),
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.notifications_outlined),
-                  activeIcon: Icon(Icons.notifications_rounded),
-                  label: 'Notifikasi',
+                  icon: Icon(Icons.assignment_outlined),
+                  activeIcon: Icon(Icons.assignment_rounded),
+                  label: 'Open Recruitment',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.person_outline),

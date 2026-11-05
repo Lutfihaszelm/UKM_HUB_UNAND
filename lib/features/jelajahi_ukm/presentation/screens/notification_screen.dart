@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/follow_provider.dart';
 import '../../application/notification_provider.dart';
+import '../../data/post_dummy_data.dart';
 import '../widgets/notification_tile.dart';
+import '../widgets/post_detail_bottom_sheet.dart';
 
 /// FR-13: In-app Notification screen.
 /// Displays updates/posts from followed UKMs with read/unread tracking.
@@ -30,6 +32,15 @@ class NotificationScreen extends ConsumerWidget {
         ),
         backgroundColor: Colors.white,
         elevation: 0,
+        leading: Navigator.of(context).canPop()
+            ? IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: Color(0xFF1E293B),
+                ),
+                onPressed: () => Navigator.of(context).maybePop(),
+              )
+            : null,
         surfaceTintColor: Colors.transparent,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
@@ -164,6 +175,12 @@ class NotificationScreen extends ConsumerWidget {
           isRead: isRead,
           onTap: () {
             ref.read(readNotificationIdsProvider.notifier).markRead(item.id);
+            final post = kDummyPostList
+                .where((p) => p.id == item.postId)
+                .firstOrNull;
+            if (post != null) {
+              showPostDetailBottomSheet(context, post);
+            }
           },
         );
       },

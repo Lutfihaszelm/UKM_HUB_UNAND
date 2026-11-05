@@ -5,8 +5,8 @@ import '../../../../models/post.dart';
 import '../../application/feed_provider.dart';
 import '../../data/ukm_dummy_data.dart';
 import '../widgets/post_card.dart';
+import '../widgets/post_detail_bottom_sheet.dart';
 import 'notification_screen.dart';
-import 'ukm_detail_screen.dart';
 
 /// FR-04 & FR-05: Feed Informasi Terkini & Filter / Pencarian Feed.
 ///
@@ -48,141 +48,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
   }
 
   void _showPostDetailModal(BuildContext context, Post post) {
-    final matchedUkm = kDummyUkmList.where((u) => u.id == post.ukmId).firstOrNull;
-
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (sheetContext) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.65,
-          minChildSize: 0.4,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (_, scrollController) {
-            return SingleChildScrollView(
-              controller: scrollController,
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 20),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFCBD5E1),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE8F7F0),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          categoryLabel(post.kategori),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF2E7D6F),
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        '${post.tanggal.day}/${post.tanggal.month}/${post.tanggal.year}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF94A3B8),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    post.title,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF1E293B),
-                      height: 1.3,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.account_balance_rounded,
-                        size: 16,
-                        color: Color(0xFF2E7D6F),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        post.ukmName,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF2E7D6F),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  const Divider(color: Color(0xFFEFF2F6)),
-                  const SizedBox(height: 14),
-                  Text(
-                    post.content,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: Color(0xFF334155),
-                      height: 1.6,
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  if (matchedUkm != null)
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: () {
-                          Navigator.pop(sheetContext);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => UkmDetailScreen(ukm: matchedUkm),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.info_outline_rounded),
-                        label: Text('Kunjungi Profil ${matchedUkm.name}'),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFF2E7D6F),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
+    showPostDetailBottomSheet(context, post);
   }
 
   @override

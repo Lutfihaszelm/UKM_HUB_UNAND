@@ -285,7 +285,7 @@ void main() {
       expect(find.text('Belum Ada Notifikasi'), findsOneWidget);
     });
 
-    testWidgets('14. MainShellScreen memungkinkan navigasi antar tab (Feed, UKM, Notifikasi)', (tester) async {
+    testWidgets('14. MainShellScreen navigasi tab dan akses notifikasi via lonceng Home', (tester) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -295,22 +295,38 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Starts on Tab 0 (Feed)
-      expect(find.text('Feed'), findsOneWidget);
-      expect(find.text('Informasi terbaru dari UKM Unand'), findsOneWidget);
+      // Starts on Tab 0 (Home)
+      expect(find.text('UKM UNAND'), findsOneWidget);
+      expect(find.text('Postingan'), findsOneWidget);
 
       // Switch to Tab 1 (UKM)
-      await tester.tap(find.text('UKM'));
+      await tester.tap(find.byIcon(Icons.apartment_rounded));
       await tester.pumpAndSettle();
 
       expect(find.text('Jelajahi UKM'), findsOneWidget);
       expect(find.text('Daftar Organisasi Kampus'), findsOneWidget);
 
-      // Switch to Tab 2 (Notifikasi)
-      await tester.tap(find.text('Notifikasi'));
+      // Menu 3 (Slot Open Recruitment) dinonaktifkan sementara: ketuk tidak membuka notifikasi / halaman lain
+      await tester.tap(find.byIcon(Icons.assignment_outlined));
+      await tester.pumpAndSettle();
+      expect(find.text('Jelajahi UKM'), findsOneWidget);
+
+      // Kembali ke Tab 0 (Home)
+      await tester.tap(find.byIcon(Icons.home_outlined));
+      await tester.pumpAndSettle();
+      expect(find.text('UKM UNAND'), findsOneWidget);
+
+      // Buka Notifikasi khusus via ikon lonceng Home Screen (satu-satunya akses)
+      await tester.tap(find.byIcon(Icons.notifications_none_rounded));
       await tester.pumpAndSettle();
 
+      expect(find.text('Notifikasi'), findsOneWidget);
       expect(find.text('Belum Ada Notifikasi'), findsOneWidget);
+
+      // Tombol kembali kembali ke Home
+      await tester.tap(find.byIcon(Icons.arrow_back_rounded));
+      await tester.pumpAndSettle();
+      expect(find.text('UKM UNAND'), findsOneWidget);
     });
   });
 }

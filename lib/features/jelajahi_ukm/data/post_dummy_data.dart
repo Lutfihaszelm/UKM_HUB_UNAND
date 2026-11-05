@@ -1,4 +1,4 @@
-﻿import '../../../models/post.dart';
+import '../../../models/post.dart';
 
 /// Dummy posts for development. Each post references a UKM by id.
 /// Categories: event, lomba, prestasi, oprec, pengumuman.
@@ -13,7 +13,9 @@ final List<Post> kDummyPostList = [
         'Peserta akan belajar state management, REST API integration, dan deployment. '
         'Kuota terbatas 40 orang, daftar sekarang!',
     kategori: 'event',
-    tanggal: DateTime(2026, 10, 25),
+    tanggal: DateTime(2026, 11, 13),
+    likes: 128,
+    comments: 5,
   ),
   Post(
     id: 'post-02',
@@ -26,6 +28,8 @@ final List<Post> kDummyPostList = [
         'Pendaftaran dibuka hingga 15 November 2026.',
     kategori: 'oprec',
     tanggal: DateTime(2026, 10, 20),
+    likes: 95,
+    comments: 12,
   ),
   Post(
     id: 'post-03',
@@ -37,6 +41,8 @@ final List<Post> kDummyPostList = [
         'yang diselenggarakan di Jakarta. Mari dukung tim kita!',
     kategori: 'lomba',
     tanggal: DateTime(2026, 10, 18),
+    likes: 74,
+    comments: 8,
   ),
   Post(
     id: 'post-04',
@@ -48,6 +54,8 @@ final List<Post> kDummyPostList = [
         'dibuka mulai 1 November. Hadiah total Rp5.000.000 untuk juara 1-3.',
     kategori: 'event',
     tanggal: DateTime(2026, 10, 15),
+    likes: 156,
+    comments: 23,
   ),
   Post(
     id: 'post-05',
@@ -59,6 +67,8 @@ final List<Post> kDummyPostList = [
         'di Universitas Gadjah Mada. Selamat kepada seluruh anggota tim!',
     kategori: 'prestasi',
     tanggal: DateTime(2026, 10, 12),
+    likes: 210,
+    comments: 31,
   ),
   Post(
     id: 'post-06',
@@ -70,6 +80,8 @@ final List<Post> kDummyPostList = [
         'Seni Akhir Tahun. Akan ada pertunjukan teater, tari, dan musik live.',
     kategori: 'event',
     tanggal: DateTime(2026, 10, 10),
+    likes: 89,
+    comments: 7,
   ),
   Post(
     id: 'post-07',
@@ -81,6 +93,8 @@ final List<Post> kDummyPostList = [
         'Peserta wajib mengikuti briefing pada 2 November di Sekretariat.',
     kategori: 'pengumuman',
     tanggal: DateTime(2026, 10, 8),
+    likes: 62,
+    comments: 14,
   ),
   Post(
     id: 'post-08',
@@ -92,6 +106,8 @@ final List<Post> kDummyPostList = [
         'bersama Ustadz Ahmad. Tempat: Masjid Kampus, Jumat pukul 13.30 WIB.',
     kategori: 'event',
     tanggal: DateTime(2026, 10, 5),
+    likes: 45,
+    comments: 3,
   ),
   Post(
     id: 'post-09',
@@ -103,6 +119,8 @@ final List<Post> kDummyPostList = [
         'Kamu yang suka bikin konten video, yuk gabung! Deadline: 30 Oktober.',
     kategori: 'oprec',
     tanggal: DateTime(2026, 10, 3),
+    likes: 53,
+    comments: 9,
   ),
   Post(
     id: 'post-10',
@@ -114,6 +132,8 @@ final List<Post> kDummyPostList = [
         'donor darah massal. Lokasi: Gedung PKM Lt.1, tanggal 28 Oktober.',
     kategori: 'event',
     tanggal: DateTime(2026, 10, 1),
+    likes: 112,
+    comments: 6,
   ),
   Post(
     id: 'post-11',
@@ -125,6 +145,8 @@ final List<Post> kDummyPostList = [
         'dengan mahasiswa asing. Ada booth makanan, pertunjukan, dan talkshow.',
     kategori: 'event',
     tanggal: DateTime(2026, 9, 28),
+    likes: 187,
+    comments: 19,
   ),
   Post(
     id: 'post-12',
@@ -136,5 +158,7 @@ final List<Post> kDummyPostList = [
         'untuk kategori PKM-KC. Prestasi gemilang untuk Universitas Andalas!',
     kategori: 'prestasi',
     tanggal: DateTime(2026, 9, 25),
+    likes: 245,
+    comments: 28,
   ),
 ];

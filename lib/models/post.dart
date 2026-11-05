@@ -1,4 +1,4 @@
-﻿/// Model for a UKM post/announcement.
+/// Model for a UKM post/announcement.
 class Post {
   const Post({
     required this.id,
@@ -9,6 +9,8 @@ class Post {
     required this.kategori,
     required this.tanggal,
     this.imageUrl,
+    this.likes = 0,
+    this.comments = 0,
   });
 
   final String id;
@@ -30,4 +32,10 @@ class Post {
 
   /// Optional image URL / asset path.
   final String? imageUrl;
+
+  /// Number of likes on this post.
+  final int likes;
+
+  /// Number of comments on this post.
+  final int comments;
 }
