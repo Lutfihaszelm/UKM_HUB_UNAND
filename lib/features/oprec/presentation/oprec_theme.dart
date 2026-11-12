@@ -18,12 +18,19 @@ ThemeData buildOprecTheme() {
       elevation: 4,
       shadowColor: AppColors.brandShadow,
     ),
+    // Field berbentuk pil putih dengan garis tipis, sesuai desain form oprec.
     inputDecorationTheme: const InputDecorationTheme(
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(16)),
+        borderRadius: BorderRadius.all(Radius.circular(24)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(24)),
+        borderSide: BorderSide(color: AppColors.borderInput),
       ),
       filled: true,
       fillColor: Colors.white,
+      isDense: true,
+      contentPadding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
     ),
   );
 }

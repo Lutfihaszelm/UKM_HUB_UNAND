@@ -4,11 +4,20 @@ import 'package:flutter/material.dart';
 import '../../models/oprec_post.dart';
 import '../../models/registration.dart';
 import '../../data/oprec_repository.dart';
+import '../../../../theme/app_colors.dart';
 import '../../../../widgets/app_card.dart';
-import '../../../../widgets/ukm_logo.dart';
 import 'oprec_form_screen.dart';
 
-String _formatDate(DateTime d) => '${d.day}/${d.month}/${d.year}';
+const _namaBulan = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', //
+  'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
+
+/// Contoh: 17 Agustus 2026 (waktu lokal HP).
+String _formatDate(DateTime d) {
+  final local = d.toLocal();
+  return '${local.day} ${_namaBulan[local.month - 1]} ${local.year}';
+}
 
 class OprecDetailScreen extends StatefulWidget {
   final OprecPost post;
@@ -25,7 +34,16 @@ class OprecDetailScreen extends StatefulWidget {
 }
 
 class _OprecDetailScreenState extends State<OprecDetailScreen> {
+  // Tinggi sheet info (bagian dari tinggi layar): awal dan saat ditarik penuh.
+  static const _sheetMin = 0.42;
+  static const _sheetMax = 0.92;
+
   Registration? _registration;
+  double _sheetExtent = _sheetMin;
+
+  bool get _hasActiveRegistration =>
+      _registration != null &&
+      _registration!.status != RegistrationStatus.dibatalkan;
 
   // ---------- Aksi ----------
   Future<void> _openForm() async {
@@ -58,7 +76,7 @@ class _OprecDetailScreenState extends State<OprecDetailScreen> {
 
   // ---------- Tombol ----------
   String get _buttonLabel {
-    if (_registration != null) {
+    if (_hasActiveRegistration) {
       return 'Sudah Mendaftar · ${_registration!.status.label}';
     }
     if (widget.post.isClosed) return 'Pendaftaran Ditutup';
@@ -66,29 +84,72 @@ class _OprecDetailScreenState extends State<OprecDetailScreen> {
   }
 
   VoidCallback? get _buttonAction {
-    if (_registration != null || widget.post.isClosed) return null;
+    if (_hasActiveRegistration || widget.post.isClosed) return null;
     return _openForm;
   }
 
   @override
   Widget build(BuildContext context) {
+    final post = widget.post;
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    // Poster makin buram saat sheet ditarik ke atas.
+    final pulled =
+        ((_sheetExtent - _sheetMin) / (_sheetMax - _sheetMin)).clamp(0.0, 1.0);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Open Recruitment')),
       extendBody: true,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 150),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _PosterImage(assetPath: widget.post.posterAsset),
-            const SizedBox(height: 16),
-            if (_registration != null) ...[
-              _RegistrationCard(registration: _registration!),
-              const SizedBox(height: 16),
-            ],
-            _OprecInfoCard(post: widget.post),
-          ],
-        ),
+      body: Stack(
+        children: [
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: screenHeight * (1 - _sheetMin) + 32, // terselip di bawah sheet
+            child: _PosterImage(assetPath: post.posterAsset, blur: pulled * 10),
+          ),
+          NotificationListener<DraggableScrollableNotification>(
+            onNotification: (notification) {
+              setState(() => _sheetExtent = notification.extent);
+              return false;
+            },
+            child: DraggableScrollableSheet(
+              initialChildSize: _sheetMin,
+              minChildSize: _sheetMin,
+              maxChildSize: _sheetMax,
+              builder: (context, scrollController) => _InfoSheet(
+                scrollController: scrollController,
+                children: [
+                  _OprecHeader(post: post),
+                  if (_registration != null)
+                    _RegistrationCard(registration: _registration!),
+                  if (post.requirements.isNotEmpty)
+                    _BulletCard(
+                      title: 'Syarat Pendaftaran',
+                      items: post.requirements,
+                      collapsible: true,
+                    ),
+                  if (post.requiredFiles.isNotEmpty)
+                    _BulletCard(
+                      title: 'Berkas yang diunggah',
+                      items: [
+                        for (final file in post.requiredFiles)
+                          file.isRequired
+                              ? file.label
+                              : '${file.label} (opsional)',
+                      ],
+                    ),
+                  if (post.terms.isNotEmpty)
+                    _BulletCard(
+                      title: 'Syarat dan Ketentuan Berlaku',
+                      items: post.terms,
+                      collapsible: true,
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const _BackButton(),
+        ],
       ),
       bottomNavigationBar: _BottomActionBar(
         label: _buttonLabel,
@@ -102,34 +163,264 @@ class _OprecDetailScreenState extends State<OprecDetailScreen> {
 // Widget-widget kecil penyusun halaman (hasil pemecahan build() yang panjang)
 // =====================================================================
 
-/// Poster oprec, fallback ke placeholder jika kosong / tidak ketemu.
+/// Poster oprec memenuhi bagian atas layar, fallback ke placeholder.
 class _PosterImage extends StatelessWidget {
   final String? assetPath;
-  const _PosterImage({required this.assetPath});
+  final double blur;
+  const _PosterImage({required this.assetPath, required this.blur});
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final placeholder = Container(
-      height: 180,
-      width: double.infinity,
       alignment: Alignment.center,
       color: colors.primaryContainer,
-      child: Icon(Icons.campaign_outlined, size: 64, color: colors.primary),
+      child: Icon(Icons.campaign_outlined, size: 72, color: colors.primary),
     );
 
-    return Container(
-      decoration: AppCard.decoration(),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: assetPath == null
-            ? placeholder
-            : Image.asset(
-                assetPath!,
-                width: double.infinity,
-                fit: BoxFit.fitWidth,
-                errorBuilder: (context, error, stackTrace) => placeholder,
+    final image = assetPath == null
+        ? placeholder
+        : Image.asset(
+            assetPath!,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => placeholder,
+          );
+    if (blur < 0.1) return image;
+    return ClipRect(
+      child: ImageFiltered(
+        imageFilter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+        child: image,
+      ),
+    );
+  }
+}
+
+/// Tombol kembali bulat di atas poster.
+class _BackButton extends StatelessWidget {
+  const _BackButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: IconButton.filled(
+          style: IconButton.styleFrom(
+            backgroundColor: Colors.white.withValues(alpha: 0.85),
+            foregroundColor: AppColors.textPrimary,
+          ),
+          icon: const Icon(Icons.chevron_left),
+          tooltip: 'Kembali',
+          onPressed: () => Navigator.maybePop(context),
+        ),
+      ),
+    );
+  }
+}
+
+/// Sheet putih yang bisa ditarik, berisi info oprec.
+class _InfoSheet extends StatelessWidget {
+  final ScrollController scrollController;
+  final List<Widget> children;
+  const _InfoSheet({required this.scrollController, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 12,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: ListView(
+        controller: scrollController,
+        // Ruang bawah supaya isi terakhir tidak tertutup tombol.
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 140),
+        children: [
+          Center(
+            child: Container(
+              width: 44,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.borderInput,
+                borderRadius: BorderRadius.circular(2),
               ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          for (final child in children)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: child,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Logo UKM persegi + nama, deskripsi, dan tanggal tutup.
+class _OprecHeader extends StatelessWidget {
+  final OprecPost post;
+  const _OprecHeader({required this.post});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final placeholder = Container(
+      color: colors.primaryContainer,
+      alignment: Alignment.center,
+      child: Icon(Icons.groups, size: 56, color: colors.primary),
+    );
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 110,
+          height: 110,
+          child: post.logoUKM == null
+              ? placeholder
+              : Image.asset(
+                  post.logoUKM!,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => placeholder,
+                ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                post.ukmName,
+                style: textTheme.titleLarge?.copyWith(
+                  color: colors.primary,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                post.description,
+                style: textTheme.bodySmall?.copyWith(height: 1.4),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Ditutup : ${_formatDate(post.closeDate)}',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colors.outline,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Kartu hijau berisi daftar poin. Bila [collapsible], hanya 3 poin pertama
+/// yang tampil sampai user menekan "lihat selengkapnya".
+class _BulletCard extends StatefulWidget {
+  final String title;
+  final List<String> items;
+  final bool collapsible;
+
+  const _BulletCard({
+    required this.title,
+    required this.items,
+    this.collapsible = false,
+  });
+
+  @override
+  State<_BulletCard> createState() => _BulletCardState();
+}
+
+class _BulletCardState extends State<_BulletCard> {
+  static const _collapsedCount = 3;
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final canExpand =
+        widget.collapsible && widget.items.length > _collapsedCount;
+    final visible = canExpand && !_expanded
+        ? widget.items.take(_collapsedCount)
+        : widget.items;
+    const onCard = AppColors.textOnButton;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 16, 18),
+      decoration: BoxDecoration(
+        color: AppColors.brandGreen,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.brandShadow,
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  widget.title,
+                  style: textTheme.titleMedium
+                      ?.copyWith(color: onCard, fontWeight: FontWeight.w700),
+                ),
+              ),
+              if (canExpand)
+                InkWell(
+                  onTap: () => setState(() => _expanded = !_expanded),
+                  child: Row(
+                    children: [
+                      Text(
+                        _expanded ? 'tutup' : 'lihat selengkapnya',
+                        style: textTheme.labelSmall?.copyWith(color: onCard),
+                      ),
+                      Icon(
+                        _expanded ? Icons.expand_less : Icons.chevron_right,
+                        size: 18,
+                        color: onCard,
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          for (final item in visible)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('•  ',
+                      style: textTheme.bodyLarge?.copyWith(color: onCard)),
+                  Expanded(
+                    child: Text(
+                      item,
+                      style: textTheme.bodyLarge?.copyWith(color: onCard),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -144,6 +435,7 @@ class _RegistrationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final files = registration.files.map((f) => f.name).join(', ');
 
     return AppCard(
       color: colors.primaryContainer,
@@ -165,67 +457,21 @@ class _RegistrationCard extends StatelessWidget {
           Text('Nama: ${registration.name} (${registration.nim})',
               style: textTheme.bodyMedium),
           const SizedBox(height: 4),
-          Text('Status: ${registration.status.label}',
+          Text('Prodi: ${registration.prodi}', style: textTheme.bodyMedium),
+          const SizedBox(height: 4),
+          Text('WhatsApp: ${registration.whatsapp}',
               style: textTheme.bodyMedium),
           const SizedBox(height: 4),
-          Text('Berkas: ${registration.fileName}', style: textTheme.bodyMedium),
+          Text('Status: ${registration.status.label}',
+              style: textTheme.bodyMedium),
+          if (files.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text('Berkas: $files', style: textTheme.bodyMedium),
+          ],
           const SizedBox(height: 4),
           Text(
             'Dikirim: ${_formatDate(registration.createdAt)}',
             style: textTheme.bodyMedium,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Kartu info oprec: UKM, judul, tanggal tutup, deskripsi.
-class _OprecInfoCard extends StatelessWidget {
-  final OprecPost post;
-  const _OprecInfoCard({required this.post});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          UkmHeader(logoAsset: post.logoUKM, ukmName: post.ukmName),
-          const SizedBox(height: 12),
-          Text(
-            post.title,
-            style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              const Chip(
-                label: Text('Oprec'),
-                visualDensity: VisualDensity.compact,
-              ),
-              const SizedBox(width: 12),
-              Icon(Icons.event, size: 18, color: colors.outline),
-              const SizedBox(width: 4),
-              Text(
-                'Tutup: ${_formatDate(post.closeDate)}',
-                style: textTheme.bodyMedium?.copyWith(color: colors.outline),
-              ),
-            ],
-          ),
-          Divider(height: 16, thickness: 4, color: colors.primary),
-          Text(
-            'Deskripsi',
-            style:
-                textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            post.description,
-            style: textTheme.bodyMedium?.copyWith(height: 1.5),
           ),
         ],
       ),
@@ -265,13 +511,17 @@ class _BottomActionBar extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: FilledButton(
                 style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.actionBlue,
+                  foregroundColor: AppColors.textOnButton,
                   minimumSize: const Size.fromHeight(52),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  shape: const StadiumBorder(),
+                  textStyle: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 onPressed: onPressed,
-                child: Text(label),
+                child: Text(label.toUpperCase()),
               ),
             ),
           ),
