@@ -28,6 +28,11 @@ class AppColors {
   static const Color brandBackground = Color(0xFFE8F0EB);
   static const Color brandShadow = Color.fromRGBO(44, 110, 73, 0.5);
 
+  // Modul 3 (desain Open Recruitment)
+  static const Color actionBlue = Color(0xFF3B5BDB); // KONFIRMASI, DAFTAR SEKARANG
+  static const Color oprecFileCard = Color(0xFFF7F6F2); // kartu slot berkas
+  static const Color oprecCameraButton = Color(0xFFC5D5CA);
+
   // Text
   static const Color textPrimary = Color(0xFF0F172A); // Deep slate / charcoal
   static const Color textSecondary = Color(0xFF475569); // Slate grey
