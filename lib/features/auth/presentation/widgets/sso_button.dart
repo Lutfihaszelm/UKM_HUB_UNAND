@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../theme/app_text_styles.dart';
 
-/// Outlined button for "SSO Universitas Andalas" with white surface and subtle border.
+/// Outlined button for "SSO Universitas Andalas" supporting Light & Dark thees
 class SsoButton extends StatelessWidget {
   const SsoButton({super.key, required this.label, required this.onPressed});
 

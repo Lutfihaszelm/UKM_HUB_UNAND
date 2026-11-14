@@ -1,7 +1,19 @@
 import 'package:flutter/material.dart';
+import '../core/routing/app_routes.dart';
 import '../models/campus_post.dart';
 import '../services/storage_service.dart';
+import '../widgets/profile_avatar.dart';
 
+/// Halaman Detail Postingan (Post Detail Screen) untuk aplikasi "UKM Hub Unand".
+///
+/// Fitur Utama:
+/// - Foto postingan proporsional seperti di beranda (tidak terpotong / tidak ter-zoom in/out secara paksa).
+/// - Ketika foto ditekan, membuka penampil interaktif layar penuh dengan fitur pinch-to-zoom (zoom in & out pakai jari).
+/// - Lembar putih (DraggableScrollableSheet) meluncur dari bawah dengan garis handle ("garis kecil").
+/// - Menekan atau menggeser garis kecil ke bawah akan memuat foto secara penuh (full).
+/// - Mengklik ikon komentar di kartu statistik secara otomatis menggeser lembar ke bawah menuju bagian komentar.
+/// - Bebas overflow ("bottom overflowed by 35 pixels" fixed).
+/// - Sistem komentar lengkap tersimpan di StorageService.
 class PostDetailScreen extends StatefulWidget {
   const PostDetailScreen({super.key});
 
@@ -10,35 +22,38 @@ class PostDetailScreen extends StatefulWidget {
 }
 
 class _PostDetailScreenState extends State<PostDetailScreen> {
-  // Postingan aktif (jika diteruskan dari navigasi)
+  // Postingan aktif
   CampusPost? _post;
   bool _initialized = false;
 
-  // ID unik postingan — dipakai sebagai key di StorageService
-  String get _postId => _post?.id ?? 'post-pkm-2026';
+  // ID unik postingan
+  String get _postId => _post?.id ?? 'post-rezim-gibran';
 
-  bool _isFollowing = false;
   bool _isLiked = false;
-  int _likeCount = 127;
-  bool _isBookmarked = false;
+  int _likeCount = 1067;
 
   // Filter komentar: 'popular' (Terpopuler) atau 'newest' (Terbaru)
   String _commentFilter = 'popular';
 
-  // Foto postingan
+  // Foto postingan (jika URL network)
   String? _postImageUrl;
 
   final TextEditingController _commentController = TextEditingController();
   final FocusNode _commentFocusNode = FocusNode();
 
-  // State balasan
+  // Controller untuk lembar geser konten (DraggableScrollableSheet)
+  late final DraggableScrollableController _sheetController;
+
+  // ScrollController yang aktif dari DraggableScrollableSheet
+  ScrollController? _activeScrollController;
+
+  // State balasan komentar
   String? _replyingToName;
   String? _replyingToCommentId;
 
   // Set ID komentar yang sedang dalam animasi memudar (fade out)
   final Set<String> _fadingCommentIds = {};
 
-  // ─── StorageService shortcut ─────────────────────────────────────────────
   final _storage = StorageService.instance;
 
   String _getCurrentUserName() {
@@ -60,6 +75,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     return name.isNotEmpty ? name[0].toUpperCase() : 'U';
   }
 
+  String get _currentDisplayTitleName {
+    final name = _getCurrentUserName();
+    if (name.isEmpty) return 'You';
+    return name[0].toUpperCase() + name.substring(1);
+  }
+
   final List<Map<String, dynamic>> _comments = [
     {
       'id': 'c-3',
@@ -72,7 +93,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       'timestamp': DateTime.now().subtract(const Duration(minutes: 15)).millisecondsSinceEpoch,
       'content':
           'Bismillah otw cari partner tim lintas fakultas, info anak IT yang mau join riset smart health yaa! 🙋‍♀️',
-      'likes': 5,
+      'likes': 6,
       'isLikedByMe': false,
       'replyToName': null,
       'replyToId': null,
@@ -82,6 +103,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _sheetController = DraggableScrollableController();
   }
 
   @override
@@ -98,15 +120,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     }
   }
 
-  // Muat data yang sudah tersimpan dari storage (komentar, like postingan)
   void _loadPersistedData() {
-    // Like postingan
     final liked = _storage.isPostLiked(_postId);
     final count = _storage.getPostLikeCount(_postId, defaultCount: _post?.initialLikes ?? _likeCount);
-
-    // Komentar
     final savedComments = _storage.loadComments(_postId);
-    // Like komentar
     final likeMap = _storage.loadCommentLikeCounts(_postId);
     final likedByMe = _storage.loadCommentLikedByMe(_postId);
 
@@ -121,7 +138,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         _comments.addAll(_getInitialComments(_postId));
       }
 
-      // Terapkan like komentar yang sudah tersimpan
       for (final c in _comments) {
         final id = c['id'] as String;
         if (likeMap.containsKey(id)) c['likes'] = likeMap[id];
@@ -165,92 +181,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           'replyToName': 'Aldo Pratama',
           'replyToId': 'c-neo-1',
         },
-        {
-          'id': 'c-neo-3',
-          'name': 'Fikri Alamsyah',
-          'dept': '(Teknik Sipil)',
-          'initial': 'FA',
-          'isMe': true,
-          'isOrganizer': false,
-          'time': '20 menit lalu',
-          'timestamp': DateTime.now().subtract(const Duration(minutes: 20)).millisecondsSinceEpoch,
-          'content':
-              'Info temen yang mau buat aplikasi smart campus untuk firetech yuk, saya handle UI/UX nya! 🚀',
-          'likes': 5,
-          'isLikedByMe': false,
-          'replyToName': null,
-          'replyToId': null,
-        },
-      ];
-    } else if (postId == 'post-aiesec-kalimantan') {
-      return [
-        {
-          'id': 'c-aie-1',
-          'name': 'Dinda Larasati',
-          'dept': '(Biologi)',
-          'initial': 'DL',
-          'isMe': false,
-          'isOrganizer': false,
-          'time': '3 jam lalu',
-          'timestamp': DateTime.now().subtract(const Duration(hours: 3)).millisecondsSinceEpoch,
-          'content':
-              'Kegiatan reboisasinya di daerah mana Kalimantan Timur min? Dan apakah ada seleksi wawancara?',
-          'likes': 8,
-          'isLikedByMe': false,
-          'replyToName': null,
-          'replyToId': null,
-        },
-        {
-          'id': 'c-aie-2',
-          'name': 'AIESEC in Unand',
-          'dept': '',
-          'initial': 'AI',
-          'isMe': false,
-          'isOrganizer': true,
-          'time': '2 jam lalu',
-          'timestamp': DateTime.now().subtract(const Duration(hours: 2)).millisecondsSinceEpoch,
-          'content':
-              '@Dinda Larasati Lokasi utama di kawasan konservasi Samboja & pesisir Balikpapan yaa. Seleksi berkas dan interview santai via daring 🌱',
-          'likes': 15,
-          'isLikedByMe': false,
-          'replyToName': 'Dinda Larasati',
-          'replyToId': 'c-aie-1',
-        },
-      ];
-    } else if (postId == 'post-bem-prabowo') {
-      return [
-        {
-          'id': 'c-bem-1',
-          'name': 'Rian Hidayat',
-          'dept': '(Fakultas Hukum)',
-          'initial': 'RH',
-          'isMe': false,
-          'isOrganizer': false,
-          'time': '2 jam lalu',
-          'timestamp': DateTime.now().subtract(const Duration(hours: 2)).millisecondsSinceEpoch,
-          'content':
-              'Siap hadir merapatkan barisan! Tuntaskan kajian evaluasi menteri bermasalah dan kawal komitmen pendidikan gratis di kampus! ✊',
-          'likes': 45,
-          'isLikedByMe': false,
-          'replyToName': null,
-          'replyToId': null,
-        },
-        {
-          'id': 'c-bem-2',
-          'name': 'BEM KM UNAND',
-          'dept': '',
-          'initial': 'BM',
-          'isMe': false,
-          'isOrganizer': true,
-          'time': '1 jam lalu',
-          'timestamp': DateTime.now().subtract(const Duration(hours: 1)).millisecondsSinceEpoch,
-          'content':
-              '@Rian Hidayat Sepakat! Seluruh draf kajian naskah akademik akan dibagikan terbuka di mimbar bebas. Sampai jumpa di pelataran PKM! 🇮🇩📢',
-          'likes': 38,
-          'isLikedByMe': false,
-          'replyToName': 'Rian Hidayat',
-          'replyToId': 'c-bem-1',
-        },
       ];
     } else {
       return [
@@ -265,7 +195,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           'timestamp': DateTime.now().subtract(const Duration(minutes: 15)).millisecondsSinceEpoch,
           'content':
               'Bismillah otw cari partner tim lintas fakultas, info anak IT yang mau join riset smart health yaa! 🙋‍♀️',
-          'likes': 5,
+          'likes': 6,
           'isLikedByMe': false,
           'replyToName': null,
           'replyToId': null,
@@ -274,10 +204,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     }
   }
 
-  // Simpan komentar ke storage setelah setiap perubahan
   Future<void> _persistComments() async {
     await _storage.saveComments(_postId, _comments);
-    // Simpan juga state like komentar
     final likeMap = {for (final c in _comments) c['id'] as String: c['likes'] as int};
     final likedByMe = _comments
         .where((c) => c['isLikedByMe'] == true)
@@ -286,7 +214,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     await _storage.saveCommentLikes(_postId, likeMap: likeMap, likedByMeIds: likedByMe);
   }
 
-  // Toggle like postingan + simpan ke storage
   void _togglePostLike() {
     setState(() {
       if (_isLiked) {
@@ -297,28 +224,127 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         _likeCount++;
       }
     });
-    // Simpan ke storage agar like postingan tidak hilang
     _storage.togglePostLike(_postId, currentCount: _likeCount);
+  }
+
+  void _toggleSheetExpand() {
+    if (!_sheetController.isAttached) return;
+    final current = _sheetController.size;
+    final target = current > 0.25 ? 0.10 : 0.65;
+    _sheetController.animateTo(
+      target,
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  // ── Menggeser otomatis ke bagian komentar saat klik logo komentar ──────────
+  void _scrollToComments() {
+    // 1. Naikkan lembar hingga 0.95 agar bagian komentar leluasa dilihat
+    if (_sheetController.isAttached && _sheetController.size < 0.85) {
+      _sheetController.animateTo(
+        0.95,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+      );
+    }
+
+    // 2. Scroll konten ListView secara mulus ke bawah (posisi komentar)
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (_activeScrollController != null && _activeScrollController!.hasClients) {
+        _activeScrollController!.animateTo(
+          240.0,
+          duration: const Duration(milliseconds: 380),
+          curve: Curves.easeOutCubic,
+        );
+      }
+      _commentFocusNode.requestFocus();
+    });
+  }
+
+  // ── Penampil Foto Layar Penuh dengan fitur Pinch-to-Zoom (zoom in & out) ───
+  void _openInteractiveImageViewer(BuildContext context) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black.withValues(alpha: 0.94),
+        barrierDismissible: true,
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return Scaffold(
+            backgroundColor: Colors.transparent,
+            body: Stack(
+              children: [
+                // InteractiveViewer: mendukung gestur 2 jari untuk zoom in & out
+                Center(
+                  child: InteractiveViewer(
+                    minScale: 0.8,
+                    maxScale: 4.5,
+                    clipBehavior: Clip.none,
+                    child: _buildImageWidget(fit: BoxFit.contain),
+                  ),
+                ),
+
+                // Tombol Tutup di Pojok Kiri Atas
+                SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => Navigator.pop(context),
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.65),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white24),
+                              ),
+                              child: const Icon(Icons.close_rounded, color: Colors.white, size: 22),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.65),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: const Text(
+                            'Cubit untuk Zoom In / Out',
+                            style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 
   @override
   void dispose() {
+    _sheetController.dispose();
     _commentController.dispose();
     _commentFocusNode.dispose();
     super.dispose();
   }
 
-  // ===========================================================================
-  // GETTER KOMENTAR DENGAN FILTER (Terpopuler & Terbaru)
-  // Komentar utama difilter/diurutkan, balasan hanya mengikuti komentar utama
-  // ===========================================================================
   List<Map<String, dynamic>> get _filteredComments {
-    // 1. Buat map id -> komentar untuk melacak komentar induk (root)
     final Map<String, Map<String, dynamic>> commentMap = {
       for (final c in _comments) c['id'] as String: c,
     };
 
-    // Fungsi pencari ID komentar utama (paling atas dalam thread balasan)
     String getRootCommentId(String startId) {
       String curr = startId;
       final visited = <String>{};
@@ -334,38 +360,30 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       return curr;
     }
 
-    // 2. Pisahkan komentar utama dan kumpulkan komentar balasan per root ID
     final List<Map<String, dynamic>> mainComments = [];
     final Map<String, List<Map<String, dynamic>>> repliesByRootId = {};
 
     for (final c in _comments) {
       final replyToId = c['replyToId'] as String?;
       if (replyToId == null || !commentMap.containsKey(replyToId)) {
-        // Ini adalah komentar utama
         mainComments.add(c);
       } else {
-        // Ini adalah komentar balasan, kaitkan ke komentar utama teratas
         final rootId = getRootCommentId(replyToId);
         repliesByRootId.putIfAbsent(rootId, () => []).add(c);
       }
     }
 
-    // 3. Urutkan HANYA komentar utama berdasarkan filter yang dipilih
     if (_commentFilter == 'popular') {
-      // Terpopuler: Urutkan komentar utama dari like terbanyak
       mainComments.sort((a, b) => (b['likes'] as int).compareTo(a['likes'] as int));
     } else {
-      // Terbaru: Urutkan komentar utama dari waktu terbaru (timestamp terbesar)
       mainComments.sort((a, b) => (b['timestamp'] as int).compareTo(a['timestamp'] as int));
     }
 
-    // 4. Susun daftar akhir: Setiap komentar utama diikuti langsung oleh balasannya
     final List<Map<String, dynamic>> result = [];
     for (final mainComment in mainComments) {
       result.add(mainComment);
       final replies = repliesByRootId[mainComment['id']];
       if (replies != null && replies.isNotEmpty) {
-        // Balasan diurutkan secara kronologis (dari balasan awal ke balasan terakhir)
         replies.sort((a, b) => (a['timestamp'] as int).compareTo(b['timestamp'] as int));
         result.addAll(replies);
       }
@@ -374,9 +392,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     return result;
   }
 
-  // ===========================================================================
-  // FUNGSI LIKE KOMENTAR (Instagram Style)
-  // ===========================================================================
   void _toggleCommentLike(Map<String, dynamic> comment) {
     setState(() {
       final isLiked = comment['isLikedByMe'] == true;
@@ -388,51 +403,17 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         comment['likes'] = (comment['likes'] as int) + 1;
       }
     });
-    // Simpan ke storage agar like tidak hilang saat app ditutup
     _persistComments();
   }
 
-  // ===========================================================================
-  // POP-UP SHARE KE APLIKASI (WhatsApp, Instagram, Facebook, TikTok, dll.)
-  // ===========================================================================
   void _showShareModal() {
     final shareApps = [
-      {
-        'name': 'WhatsApp',
-        'icon': Icons.chat_bubble_outline_rounded,
-        'color': const Color(0xFF25D366),
-        'bg': const Color(0xFFE8F5E9),
-      },
-      {
-        'name': 'Instagram',
-        'icon': Icons.camera_alt_outlined,
-        'color': const Color(0xFFE1306C),
-        'bg': const Color(0xFFFCE4EC),
-      },
-      {
-        'name': 'Facebook',
-        'icon': Icons.facebook,
-        'color': const Color(0xFF1877F2),
-        'bg': const Color(0xFFE3F2FD),
-      },
-      {
-        'name': 'TikTok',
-        'icon': Icons.music_note_rounded,
-        'color': const Color(0xFF000000),
-        'bg': const Color(0xFFF1F5F9),
-      },
-      {
-        'name': 'Salin Tautan',
-        'icon': Icons.link_rounded,
-        'color': const Color(0xFF1B5E3C),
-        'bg': const Color(0xFFE8F5E9),
-      },
-      {
-        'name': 'Lainnya...',
-        'icon': Icons.more_horiz_rounded,
-        'color': const Color(0xFF64748B),
-        'bg': const Color(0xFFF1F5F9),
-      },
+      {'name': 'WhatsApp', 'icon': Icons.chat_bubble_outline_rounded, 'color': const Color(0xFF25D366), 'bg': const Color(0xFFE8F5E9)},
+      {'name': 'Instagram', 'icon': Icons.camera_alt_outlined, 'color': const Color(0xFFE1306C), 'bg': const Color(0xFFFCE4EC)},
+      {'name': 'Facebook', 'icon': Icons.facebook, 'color': const Color(0xFF1877F2), 'bg': const Color(0xFFE3F2FD)},
+      {'name': 'TikTok', 'icon': Icons.music_note_rounded, 'color': const Color(0xFF000000), 'bg': const Color(0xFFF1F5F9)},
+      {'name': 'Salin Tautan', 'icon': Icons.link_rounded, 'color': const Color(0xFF1B5E3C), 'bg': const Color(0xFFE8F5E9)},
+      {'name': 'Lainnya...', 'icon': Icons.more_horiz_rounded, 'color': const Color(0xFF64748B), 'bg': const Color(0xFFF1F5F9)},
     ];
 
     showModalBottomSheet<void>(
@@ -462,17 +443,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 const SizedBox(height: 16),
                 const Text(
                   'Bagikan Postingan Ini',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A),
-                  ),
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  'Pilih media sosial atau aplikasi tujuan:',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-                ),
+                const Text('Pilih media sosial tujuan:', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
                 const SizedBox(height: 20),
                 GridView.builder(
                   shrinkWrap: true,
@@ -509,11 +483,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                             const SizedBox(height: 6),
                             Text(
                               app['name'] as String,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF0F172A),
-                              ),
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
                             ),
                           ],
                         ),
@@ -530,9 +500,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     );
   }
 
-  // ===========================================================================
-  // FITUR LAPOR KOMENTAR (Alur: Klik Bendera -> Pop-up Alasan -> Pop-up Sukses)
-  // ===========================================================================
   void _reportComment(Map<String, dynamic> comment) {
     final reasons = [
       {'title': 'Kata Kasar & Ujaran Kebencian', 'desc': 'Komentar mengandung hinaan, SARA, atau bahasa kasar.'},
@@ -556,11 +523,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 SizedBox(width: 8),
                 Text(
                   'Laporkan Komentar',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A),
-                  ),
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                 ),
               ],
             ),
@@ -590,19 +553,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              r['title']!,
-                              style: const TextStyle(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1E293B),
-                              ),
-                            ),
+                            Text(r['title']!, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: Color(0xFF1E293B))),
                             const SizedBox(height: 2),
-                            Text(
-                              r['desc']!,
-                              style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
-                            ),
+                            Text(r['desc']!, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
                           ],
                         ),
                       ),
@@ -628,7 +581,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     });
   }
 
-  // Pop-up Notifikasi Sukses
   void _showSuccessDialog(String message) {
     showDialog<void>(
       context: context,
@@ -642,27 +594,16 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             Container(
               width: 52,
               height: 52,
-              decoration: const BoxDecoration(
-                color: Color(0xFFE8F5E9),
-                shape: BoxShape.circle,
-              ),
+              decoration: const BoxDecoration(color: Color(0xFFE8F5E9), shape: BoxShape.circle),
               child: const Icon(Icons.check_circle_rounded, color: Color(0xFF1B5E3C), size: 36),
             ),
             const SizedBox(height: 14),
             const Text(
               'Berhasil',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF0F172A),
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
             ),
             const SizedBox(height: 6),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF475569), height: 1.4),
-            ),
+            Text(message, textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, color: Color(0xFF475569), height: 1.4)),
             const SizedBox(height: 18),
             SizedBox(
               width: double.infinity,
@@ -684,14 +625,14 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     );
   }
 
-  // ===========================================================================
-  // FUNGSI BALAS KOMENTAR
-  // ===========================================================================
   void _startReply(Map<String, dynamic> targetComment) {
     setState(() {
       _replyingToName = targetComment['name'] as String;
       _replyingToCommentId = targetComment['id'] as String;
     });
+    if (_sheetController.isAttached && _sheetController.size < 0.3) {
+      _sheetController.animateTo(0.65, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+    }
     _commentFocusNode.requestFocus();
   }
 
@@ -702,14 +643,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     });
   }
 
-  // ===========================================================================
-  // FUNGSI KIRIM KOMENTAR / BALASAN
-  // ===========================================================================
   void _sendComment() {
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
 
-    // Validasi minimal 3 karakter
     if (text.length < 3) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -717,10 +654,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             children: [
               Icon(Icons.warning_amber_rounded, color: Colors.white, size: 18),
               SizedBox(width: 8),
-              Text(
-                'Komentar minimal 3 karakter',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-              ),
+              Text('Komentar minimal 3 karakter', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
             ],
           ),
           backgroundColor: const Color(0xFFDC2626),
@@ -773,107 +707,17 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       _replyingToName = null;
       _replyingToCommentId = null;
     });
-    // Simpan komentar baru ke storage
     _persistComments();
   }
 
-  // ===========================================================================
-  // FUNGSI EDIT KOMENTAR SENDIRI
-  // ===========================================================================
-  void _editComment(Map<String, dynamic> comment) {
-    final editController = TextEditingController(text: comment['content'] as String);
-
-    showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Edit Komentar',
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF0F172A),
-          ),
-        ),
-        content: TextField(
-          controller: editController,
-          autofocus: true,
-          maxLines: 4,
-          style: const TextStyle(fontSize: 14, color: Color(0xFF141B2B)),
-          decoration: InputDecoration(
-            hintText: 'tulis isi komentar',
-            filled: true,
-            fillColor: const Color(0xFFF8FAFC),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF1B5E3C), width: 1.6),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal', style: TextStyle(color: Color(0xFF64748B))),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final newText = editController.text.trim();
-              if (newText.isNotEmpty) {
-                Navigator.pop(ctx, newText);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1B5E3C),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: const Text('Simpan'),
-          ),
-        ],
-      ),
-    ).then((updatedText) {
-      if (updatedText != null && updatedText.isNotEmpty && mounted) {
-        setState(() {
-          comment['content'] = updatedText;
-          comment['time'] = 'Diedit baru saja';
-        });
-        // Simpan hasil edit ke storage
-        _persistComments();
-      }
-    });
-  }
-
-  // ===========================================================================
-  // FUNGSI HAPUS KOMENTAR (Fade-out, Konfirmasi, Tanpa Snackbar)
-  // ===========================================================================
   void _deleteCommentWithFade(Map<String, dynamic> comment) {
     showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Hapus Komentar?',
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF0F172A),
-          ),
-        ),
-        content: const Text(
-          'Komentar ini akan dihapus secara permanen dari postingan.',
-          style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
-        ),
+        title: const Text('Hapus Komentar?', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+        content: const Text('Komentar ini akan dihapus secara permanen dari postingan.', style: TextStyle(fontSize: 14, color: Color(0xFF64748B))),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -894,7 +738,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     ).then((confirmed) {
       if (confirmed == true && mounted) {
         final commentId = comment['id'] as String;
-
         setState(() {
           _fadingCommentIds.add(commentId);
         });
@@ -905,7 +748,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               _comments.removeWhere((c) => c['id'] == commentId);
               _fadingCommentIds.remove(commentId);
             });
-            // Simpan setelah komentar terhapus
             _persistComments();
           }
         });
@@ -913,652 +755,598 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     });
   }
 
+  // ===========================================================================
+  // BUILD METHOD
+  // ===========================================================================
   @override
   Widget build(BuildContext context) {
     const primaryColor = Color(0xFF1B5E3C);
     final displayedComments = _filteredComments;
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF141B2B)),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text(
-          'Post Detail',
-          style: TextStyle(
-            color: Color(0xFF141B2B),
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(
-              _isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-              color: _isBookmarked ? primaryColor : const Color(0xFF404942),
-            ),
-            onPressed: () {
-              setState(() {
-                _isBookmarked = !_isBookmarked;
-              });
-            },
-          ),
-          // Tombol share di AppBar membuka dialog pop-up share
-          IconButton(
-            icon: const Icon(Icons.share_outlined, color: Color(0xFF404942)),
-            onPressed: _showShareModal,
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: CircleAvatar(
-              radius: 16,
-              backgroundColor: primaryColor,
-              child: const Icon(Icons.person, size: 18, color: Colors.white),
-            ),
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: const Color(0xFFF1F5F9), height: 1),
-        ),
-      ),
-      body: Column(
+      backgroundColor: Colors.black,
+      resizeToAvoidBottomInset: true,
+      body: Stack(
         children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              children: [
-                // Header Profil UKM
-                Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: _post?.iconBgColor ?? const Color(0xFFE8F5E9),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Center(
-                        child: Icon(
-                          _post?.icon ?? Icons.psychology,
-                          color: _post?.iconColor ?? primaryColor,
-                          size: 28,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  _post?.authorName ?? 'UKM Penalaran & Riset',
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF141B2B),
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              if (_post?.isVerified ?? true) ...[
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Icons.verified,
-                                  size: 16,
-                                  color: _post?.iconColor ?? primaryColor,
-                                ),
-                              ],
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            _post?.authorSubtitle ?? '2 jam yang lalu • Kampus Limau Manis',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF707971),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    InkWell(
-                      onTap: () {
-                        setState(() {
-                          _isFollowing = !_isFollowing;
-                        });
-                      },
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: _isFollowing ? primaryColor : const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              _isFollowing ? Icons.check : Icons.add,
-                              size: 16,
-                              color: _isFollowing ? Colors.white : primaryColor,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              _isFollowing ? 'Mengikuti' : 'Ikuti',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: _isFollowing ? Colors.white : primaryColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+          // ─── 1. Foto Postingan Proporsional (Seperti di Beranda + Sentuh untuk Zoom) ───
+          Positioned.fill(
+            child: _buildBackgroundPhotoArea(),
+          ),
+
+          // ─── 2. Top Bar Melayang: Tombol Back Bundar & Kapsul "You" ───
+          _buildTopHeader(),
+
+          // ─── 3. Sliding White Sheet (DraggableScrollableSheet) ───
+          DraggableScrollableSheet(
+            controller: _sheetController,
+            initialChildSize: 0.65,
+            minChildSize: 0.10,
+            maxChildSize: 0.95,
+            snap: true,
+            snapSizes: const [0.10, 0.65, 0.95],
+            builder: (context, scrollController) {
+              // Simpan scrollController agar bisa digeser secara programatik
+              _activeScrollController = scrollController;
+
+              return Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 18,
+                      offset: Offset(0, -5),
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
-
-                // Poster Banner / Foto Postingan
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Stack(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                  child: Column(
                     children: [
-                      _postImageUrl != null
-                          ? Image.network(
-                              _postImageUrl!,
-                              height: 220,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return _buildDefaultGraphicBanner(primaryColor);
-                              },
-                            )
-                          : (_post?.assetImagePath != null
-                              ? Image.asset(
-                                  _post!.assetImagePath!,
-                                  height: 220,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return _buildDefaultGraphicBanner(primaryColor);
-                                  },
-                                )
-                              : _buildDefaultGraphicBanner(primaryColor)),
-                      Positioned(
-                        top: 12,
-                        left: 12,
+                      // ── Handle Bar / "Garis Kecil" di Atas Nama UKM ──
+                      // Geser ke bawah atau sentuh untuk melihat foto secara penuh (full)
+                      GestureDetector(
+                        onTap: _toggleSheetExpand,
+                        behavior: HitTestBehavior.opaque,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: (_post?.iconColor ?? primaryColor).withValues(alpha: 0.9),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.stars, color: Color(0xFFAEF2C5), size: 14),
-                              const SizedBox(width: 4),
-                              Text(
-                                _post?.categoryBadge ?? 'Event Nasional',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                          width: double.infinity,
+                          padding: const EdgeInsets.only(top: 10, bottom: 8),
+                          child: Center(
+                            child: Container(
+                              width: 44,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFCBD5E1),
+                                borderRadius: BorderRadius.circular(2),
                               ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        top: 12,
-                        right: 12,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.65),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Text(
-                            'Terbuka Umum',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),
+                      ),
+
+                      // ── Konten Scrollable Sheet (Detail Postingan & Komentar) ──
+                      Expanded(
+                        child: ListView(
+                          controller: scrollController,
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+                          children: [
+                            // 1. Header UKM (Logo Bundar + Nama UKM)
+                            _buildUkmHeader(primaryColor),
+                            const SizedBox(height: 12),
+
+                            // 2. Judul Postingan
+                            _buildPostTitle(),
+                            const SizedBox(height: 10),
+
+                            // 3. Isi / Deskripsi Postingan
+                            _buildPostContent(),
+                            const SizedBox(height: 16),
+
+                            // 4. Baris Kartu Statistik (❤️ 1067 | 💬 5    ⎋)
+                            _buildStatsCard(),
+                            const SizedBox(height: 18),
+
+                            // 5. Header Komentar (Teks Komentar 5 + Tombol Filter Hijau)
+                            _buildCommentsHeader(primaryColor),
+                            const SizedBox(height: 14),
+
+                            // 6. Daftar Komentar
+                            for (final comment in displayedComments)
+                              _buildAnimatedCommentItem(comment, primaryColor),
+
+                            const SizedBox(height: 12),
+                          ],
+                        ),
+                      ),
+
+                      // ── Bar Input Komentar Bawah (Hanya tampil saat sheet aktif, anti-overflow) ──
+                      AnimatedBuilder(
+                        animation: _sheetController,
+                        builder: (context, _) {
+                          final currentSize = _sheetController.isAttached
+                              ? _sheetController.size
+                              : 0.65;
+                          if (currentSize < 0.22) {
+                            return const SizedBox.shrink();
+                          }
+                          return _buildBottomCommentInput(primaryColor);
+                        },
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
 
-                // Judul & Deskripsi
-                Text(
-                  _post?.title ??
-                      'Analisi Reaksi Normies ketika melihat balasan instragam  dengan gif meme "WHAT NEXT" terhadap kehidupan bersosial media',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF141B2B),
-                    height: 1.3,
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 1. Area Foto Postingan Proporsional (Seperti Beranda)
+  // ─────────────────────────────────────────────────────────────────────────────
+  Widget _buildBackgroundPhotoArea() {
+    return GestureDetector(
+      onTap: () => _openInteractiveImageViewer(context),
+      child: Container(
+        color: Colors.black,
+        width: double.infinity,
+        height: double.infinity,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Latar belakang foto dengan reduksi kontras lembut
+            Opacity(
+              opacity: 0.35,
+              child: _buildImageWidget(fit: BoxFit.cover),
+            ),
+
+            // Foto utama proporsional tanpa zoom in/out paksa (persis seperti di beranda)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: MediaQuery.of(context).size.height * 0.44,
+              child: _buildImageWidget(fit: BoxFit.contain),
+            ),
+
+            // Gradien atas agar tombol Back & Kapsul "You" tetap kontras
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 120,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.black.withValues(alpha: 0.70),
+                      Colors.transparent,
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  _post?.fullContent ??
-                      'Halo Mahasiswa Unand! UKM Penalaran resmi membuka pendaftaran pembinaan intensif Program Kreativitas Mahasiswa (PKM) & Call for Papers tingkat nasional. Dapatkan bimbingan intensif dari dosen pembina serta fasilitas pendanaan riset kampus. Kuota terbatas untuk seluruh fakultas! ✨📚',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF404942),
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 12),
+              ),
+            ),
 
-                // Hashtags
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: (_post?.tags ?? [
-                    '#UKMPenalaran',
-                    '#PKMUnand',
-                    '#PrestasiKampus',
-                    '#RisetMahasiswa',
-                  ]).map((tag) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        tag,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: _post?.iconColor ?? primaryColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    );
-                  }).toList(),
+            // Indikator kecil petunjuk Zoom
+            Positioned(
+              top: MediaQuery.of(context).size.height * 0.34,
+              right: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.65),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.white24),
                 ),
-                const SizedBox(height: 16),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.zoom_in_rounded, color: Colors.white, size: 15),
+                    SizedBox(width: 4),
+                    Text(
+                      'Tekan untuk Zoom',
+                      style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-                // Action Bar (Like, Comment, Share)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+  Widget _buildImageWidget({required BoxFit fit}) {
+    if (_postImageUrl != null) {
+      return Image.network(
+        _postImageUrl!,
+        fit: fit,
+        alignment: Alignment.center,
+        errorBuilder: (_, _, _) => _buildDefaultGraphicBanner(const Color(0xFF1B5E3C)),
+      );
+    }
+    if (_post?.assetImagePath != null) {
+      return Image.asset(
+        _post!.assetImagePath!,
+        fit: fit,
+        alignment: Alignment.center,
+        errorBuilder: (_, _, _) => _buildDefaultGraphicBanner(const Color(0xFF1B5E3C)),
+      );
+    }
+    return _buildDefaultGraphicBanner(const Color(0xFF1B5E3C));
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 2. Top Bar Melayang
+  // ─────────────────────────────────────────────────────────────────────────────
+  Widget _buildTopHeader() {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => Navigator.maybePop(context),
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  width: 38,
+                  height: 38,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.black.withValues(alpha: 0.55),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.25),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                  ),
+                ),
+              ),
+            ),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  Navigator.pushNamed(context, AppRoutes.profile, arguments: true);
+                },
+                borderRadius: BorderRadius.circular(22),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.75),
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.25),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
                   ),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Like Button
-                      InkWell(
-                        onTap: _togglePostLike,
-                        borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: _isLiked ? const Color(0xFFDCFCE7) : Colors.transparent,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                _isLiked ? Icons.favorite : Icons.favorite_border,
-                                size: 18,
-                                color: _isLiked ? primaryColor : const Color(0xFF64748B),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                '$_likeCount Suka',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: _isLiked ? primaryColor : const Color(0xFF64748B),
-                                ),
-                              ),
-                            ],
-                          ),
+                      Text(
+                        _currentDisplayTitleName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Row(
-                        children: [
-                          const Icon(Icons.mode_comment_outlined, size: 18, color: Color(0xFF64748B)),
-                          const SizedBox(width: 6),
-                          Text(
-                            '${_comments.length}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF64748B),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 16),
-                      // Tombol Share membuka pop-up pilihan media sosial
-                      InkWell(
-                        onTap: _showShareModal,
-                        borderRadius: BorderRadius.circular(20),
-                        child: Padding(
-                          padding: const EdgeInsets.all(4),
-                          child: Row(
-                            children: const [
-                              Icon(Icons.share_outlined, size: 18, color: Color(0xFF64748B)),
-                              SizedBox(width: 4),
-                              Text(
-                                'Bagikan',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF64748B),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                      const ProfileAvatar(radius: 12),
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-                // Komentar Header & Filter Dropdown (Terpopuler / Terbaru)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Text(
-                          'Komentar',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF141B2B),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '${_comments.length}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF475569),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 3. Header UKM di dalam Lembar Putih
+  // ─────────────────────────────────────────────────────────────────────────────
+  Widget _buildUkmHeader(Color primaryColor) {
+    return Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: Colors.black,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.18),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: ClipOval(
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Image.asset(
+                'assets/images/logoneo.png',
+                fit: BoxFit.contain,
+                errorBuilder: (_, _, _) {
+                  return Icon(
+                    _post?.icon ?? Icons.psychology,
+                    color: Colors.white,
+                    size: 20,
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            _post?.authorName ?? 'Neo Telemetri',
+            style: const TextStyle(
+              fontSize: 15.5,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF0F172A),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-                    // Dropdown Filter Komentar Terpopuler / Terbaru
-                    PopupMenuButton<String>(
-                      initialValue: _commentFilter,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      onSelected: (val) {
-                        setState(() {
-                          _commentFilter = val;
-                        });
-                      },
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: 'popular',
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.trending_up_rounded,
-                                size: 18,
-                                color: _commentFilter == 'popular' ? primaryColor : const Color(0xFF64748B),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Terpopuler',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: _commentFilter == 'popular' ? FontWeight.w700 : FontWeight.normal,
-                                  color: _commentFilter == 'popular' ? primaryColor : const Color(0xFF1E293B),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: 'newest',
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.schedule_rounded,
-                                size: 18,
-                                color: _commentFilter == 'newest' ? primaryColor : const Color(0xFF64748B),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Terbaru',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: _commentFilter == 'newest' ? FontWeight.w700 : FontWeight.normal,
-                                  color: _commentFilter == 'newest' ? primaryColor : const Color(0xFF1E293B),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: Row(
-                          children: [
-                            Text(
-                              _commentFilter == 'popular' ? 'Terpopuler' : 'Terbaru',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF475569),
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            const Icon(Icons.arrow_drop_down, size: 18, color: Color(0xFF64748B)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 4. Judul & Isi Postingan
+  // ─────────────────────────────────────────────────────────────────────────────
+  Widget _buildPostTitle() {
+    return Text(
+      _post?.title ?? 'Postingan Dibuat buat Sembrono oleh Rezim, Gibran : Knock satu cik',
+      style: const TextStyle(
+        fontSize: 16.5,
+        fontWeight: FontWeight.w900,
+        color: Color(0xFF0F172A),
+        height: 1.25,
+      ),
+    );
+  }
+
+  Widget _buildPostContent() {
+    final text = _post?.description.isNotEmpty == true
+        ? _post!.description
+        : (_post?.fullContent ?? '');
+
+    return Text(
+      text.isNotEmpty
+          ? text
+          : 'Bahaya banget loh yaa, kejadian yang tidak diduga terjadi pada awal bulan ini secara mendadak, pihak aparat mengambil tindakan krusial dengan tidur untuk membangun mimpi yang ada di angan” mereka, masyarakat setuju dan membiarkan masalah ini menjadi pelajaran dan menggangap hanya ujian yang diberikan',
+      style: const TextStyle(
+        fontSize: 13,
+        color: Color(0xFF1E293B),
+        height: 1.45,
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 5. Baris Kartu Statistik (❤️ 1067 | 💬 5    ⎋)
+  // ─────────────────────────────────────────────────────────────────────────────
+  Widget _buildStatsCard() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+      ),
+      child: Row(
+        children: [
+          // Heart Like Post
+          GestureDetector(
+            onTap: _togglePostLike,
+            behavior: HitTestBehavior.opaque,
+            child: Row(
+              children: [
+                Icon(
+                  _isLiked ? Icons.favorite : Icons.favorite_border,
+                  color: const Color(0xFFE53935),
+                  size: 26,
                 ),
-                const SizedBox(height: 14),
-
-                // Daftar Komentar (Sesuai Filter)
-                for (final comment in displayedComments) ...[
-                  _buildAnimatedCommentItem(comment, primaryColor),
-                ],
+                const SizedBox(width: 8),
+                Text(
+                  '$_likeCount',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF334155),
+                  ),
+                ),
               ],
             ),
           ),
+          const SizedBox(width: 14),
 
-          // Bar Input Komentar Bawah dengan Indikator Balas
+          // Garis Pembatas Vertikal
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+            width: 1.2,
+            height: 20,
+            color: const Color(0xFFCBD5E1),
+          ),
+          const SizedBox(width: 14),
+
+          // Ikon & Jumlah Komentar -> Klik untuk otomatis geser ke bawah tempat komentar!
+          GestureDetector(
+            onTap: _scrollToComments,
+            behavior: HitTestBehavior.opaque,
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.chat_bubble_outline_rounded,
+                  color: Color(0xFF64748B),
+                  size: 22,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${_comments.length}',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF334155),
+                  ),
+                ),
+              ],
             ),
-            child: SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+          ),
+          const Spacer(),
+
+          // Tombol Share
+          GestureDetector(
+            onTap: _showShareModal,
+            child: const Icon(
+              Icons.open_in_new_rounded,
+              color: Color(0xFF64748B),
+              size: 22,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 6. Header Komentar (Komentar 5 + Filter Hijau)
+  // ─────────────────────────────────────────────────────────────────────────────
+  Widget _buildCommentsHeader(Color primaryColor) {
+    return Row(
+      children: [
+        const Text(
+          'Komentar',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF0F172A),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE2E8F0),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            '${_comments.length}',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF475569),
+            ),
+          ),
+        ),
+        const Spacer(),
+
+        // Tombol Bulat Hijau Filter (Terpopuler / Terbaru)
+        PopupMenuButton<String>(
+          initialValue: _commentFilter,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          onSelected: (val) {
+            setState(() {
+              _commentFilter = val;
+            });
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              value: 'popular',
+              child: Row(
                 children: [
-                  // Banner kecil saat sedang membalas komentar orang
-                  if (_replyingToName != null) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      margin: const EdgeInsets.only(bottom: 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(8),
-                        border: const Border(left: BorderSide(color: primaryColor, width: 3)),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.reply_rounded, size: 16, color: primaryColor),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              'Membalas $_replyingToName',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF0F172A),
-                              ),
-                            ),
-                          ),
-                          InkWell(
-                            onTap: _cancelReply,
-                            child: const Icon(Icons.close, size: 16, color: Color(0xFF64748B)),
-                          ),
-                        ],
-                      ),
+                  Icon(
+                    Icons.trending_up_rounded,
+                    size: 18,
+                    color: _commentFilter == 'popular' ? primaryColor : const Color(0xFF64748B),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Terpopuler',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: _commentFilter == 'popular' ? FontWeight.w700 : FontWeight.normal,
+                      color: _commentFilter == 'popular' ? primaryColor : const Color(0xFF1E293B),
                     ),
-                  ],
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          child: TextField(
-                            controller: _commentController,
-                            focusNode: _commentFocusNode,
-                            style: const TextStyle(fontSize: 14),
-                            decoration: InputDecoration(
-                              hintText: _replyingToName != null
-                                  ? 'Tulis balasan untuk $_replyingToName...'
-                                  : 'Tulis tanggapan atau pertanyaan...',
-                              hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      InkWell(
-                        onTap: _sendComment,
-                        borderRadius: BorderRadius.circular(24),
-                        child: Container(
-                          width: 44,
-                          height: 44,
-                          decoration: const BoxDecoration(
-                            color: primaryColor,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Center(
-                            child: Icon(Icons.send, color: Colors.white, size: 18),
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Banner grafis default jika tidak ada file foto
-  Widget _buildDefaultGraphicBanner(Color primaryColor) {
-    final gradient = _post?.bannerGradient ?? const [Color(0xFF004528), Color(0xFF1B6D24)];
-    final icon = _post?.bannerIcon ?? Icons.workspace_premium;
-    final title = _post?.bannerTitle ?? 'NATIONAL STUDENT SCIENTIFIC\nPAPER COMPETITION 2026';
-    final subtitle = _post?.bannerSubtitle ?? 'SEMINAR & WORKSHOP INTENSIF PKM';
-
-    return Container(
-      height: 220,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: gradient.first,
-        borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: gradient,
-        ),
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Positioned(
-            right: -20,
-            bottom: -20,
-            child: Icon(
-              icon,
-              size: 160,
-              color: Colors.white.withValues(alpha: 0.1),
+            PopupMenuItem(
+              value: 'newest',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.schedule_rounded,
+                    size: 18,
+                    color: _commentFilter == 'newest' ? primaryColor : const Color(0xFF64748B),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Terbaru',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: _commentFilter == 'newest' ? FontWeight.w700 : FontWeight.normal,
+                      color: _commentFilter == 'newest' ? primaryColor : const Color(0xFF1E293B),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 48, color: const Color(0xFFFACC15)),
-                const SizedBox(height: 8),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  subtitle,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Color(0xFF93D5AA),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
-                  ),
+          ],
+          child: Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: primaryColor,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: primaryColor.withValues(alpha: 0.35),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
+            child: const Center(
+              child: Icon(
+                Icons.menu_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  // Widget Item Komentar dengan Like Heart ala Instagram & Tombol Bendera Lapor
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 7. Item Komentar dengan Like di Kanan & Tombol Balas / Lapor di Bawah
+  // ─────────────────────────────────────────────────────────────────────────────
   Widget _buildAnimatedCommentItem(Map<String, dynamic> c, Color primaryColor) {
     final commentId = c['id'] as String;
     final isFading = _fadingCommentIds.contains(commentId);
@@ -1576,259 +1364,368 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       child: Container(
         margin: EdgeInsets.only(
           bottom: 14,
-          left: isReply ? 24 : (isOrganizer ? 20 : 0),
+          left: isReply ? 24 : 0,
         ),
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircleAvatar(
-              radius: isReply ? 16 : 18,
-              backgroundColor: isOrganizer
-                  ? primaryColor
-                  : (isMe ? const Color(0xFFDCFCE7) : const Color(0xFFE2E8F0)),
-              child: isOrganizer
-                  ? Icon(_post?.icon ?? Icons.psychology, size: 18, color: Colors.white)
-                  : Text(
-                      displayInitial,
-                      style: TextStyle(
-                        fontSize: isReply ? 11 : 12,
-                        fontWeight: FontWeight.bold,
-                        color: isMe ? const Color(0xFF1B5E3C) : const Color(0xFF1E293B),
-                      ),
-                    ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isOrganizer ? const Color(0xFFF0FDF4) : const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: isOrganizer ? const Color(0xFFBBF7D0) : const Color(0xFFE2E8F0),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // ── Header: nama + badge (Anda / Penyelenggara) ──
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            // Nama akun
-                            Flexible(
-                              child: Text(
-                                displayName,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                GestureDetector(
+                  onTap: (!isMe && !isOrganizer)
+                      ? () {
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutes.profile,
+                            arguments: false,
+                          );
+                        }
+                      : null,
+                  child: CircleAvatar(
+                    radius: isReply ? 16 : 18,
+                    backgroundColor: isOrganizer
+                        ? primaryColor
+                        : (isMe ? const Color(0xFFDCFCE7) : const Color(0xFFE2E8F0)),
+                    child: isOrganizer
+                        ? Icon(_post?.icon ?? Icons.psychology, size: 18, color: Colors.white)
+                        : Text(
+                            displayInitial,
+                            style: TextStyle(
+                              fontSize: isReply ? 11 : 12,
+                              fontWeight: FontWeight.bold,
+                              color: isMe ? const Color(0xFF1B5E3C) : const Color(0xFF1E293B),
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+
+                Expanded(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isOrganizer ? const Color(0xFFF0FDF4) : const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: isOrganizer ? const Color(0xFFBBF7D0) : const Color(0xFFE2E8F0),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      displayName,
+                                      style: const TextStyle(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (isMe) ...[
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF1B5E3C),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text(
+                                        'Anda',
+                                        style: TextStyle(
+                                          fontSize: 9.5,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                  if (isOrganizer) ...[
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: primaryColor,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text(
+                                        'Penyelenggara',
+                                        style: TextStyle(
+                                          fontSize: 9.5,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                c['content'] as String,
                                 style: const TextStyle(
                                   fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF0F172A),
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                              ),
-                            ),
-                            // Badge hijau "Anda"
-                            if (isMe) ...[
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF1B5E3C),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Text(
-                                  'Anda',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                                  color: Color(0xFF1E293B),
+                                  height: 1.35,
                                 ),
                               ),
                             ],
-                            // Badge "Penyelenggara"
-                            if (isOrganizer) ...[
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF1B6D24),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Text(
-                                  'Penyelenggara',
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                        if (c['replyToName'] != null) ...[
-                          const SizedBox(height: 3),
-                          Text(
-                            'Membalas @${c['replyToName']}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: primaryColor,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 6),
-                        Text(
-                          c['content'] as String,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF334155),
-                            height: 1.4,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+                      const SizedBox(width: 8),
 
-                  // ── Bar Bawah Komentar (Waktu · Balas · Edit · Hapus · Flag) ──
-                  // Tombol bendera & titik-tiga dipindah ke sini agar tidak
-                  // berdesakan dengan nama di header (fix overflow).
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4, top: 4),
-                    child: Row(
-                      children: [
-                        Text(
-                          c['time'] as String,
-                          style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
-                        ),
-                        const SizedBox(width: 10),
-                        // Tombol Balas
-                        InkWell(
-                          onTap: () => _startReply(c),
-                          child: Text(
-                            'Balas',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: primaryColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        if (isMe) ...[
-                          const SizedBox(width: 10),
-                          // Edit
-                          InkWell(
-                            onTap: () => _editComment(c),
-                            child: const Text(
-                              'Edit',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Color(0xFF1B5E3C),
-                                fontWeight: FontWeight.w600,
+                      GestureDetector(
+                        onTap: () => _toggleCommentLike(c),
+                        behavior: HitTestBehavior.opaque,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                isLikedByMe ? Icons.favorite : Icons.favorite_border,
+                                size: 18,
+                                color: isLikedByMe ? const Color(0xFFE53935) : const Color(0xFF94A3B8),
                               ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          // Hapus
-                          InkWell(
-                            onTap: () => _deleteCommentWithFade(c),
-                            child: const Text(
-                              'Hapus',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Color(0xFFDC2626),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          // Titik tiga (Edit/Hapus via menu)
-                          PopupMenuButton<String>(
-                            icon: const Icon(Icons.more_horiz, size: 15, color: Color(0xFF94A3B8)),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            onSelected: (value) {
-                              if (value == 'edit') _editComment(c);
-                              if (value == 'delete') _deleteCommentWithFade(c);
-                            },
-                            itemBuilder: (_) => [
-                              const PopupMenuItem(
-                                value: 'edit',
-                                height: 36,
-                                child: Row(children: [
-                                  Icon(Icons.edit_outlined, size: 15, color: Color(0xFF334155)),
-                                  SizedBox(width: 8),
-                                  Text('Edit', style: TextStyle(fontSize: 13)),
-                                ]),
-                              ),
-                              const PopupMenuItem(
-                                value: 'delete',
-                                height: 36,
-                                child: Row(children: [
-                                  Icon(Icons.delete_outline, size: 15, color: Color(0xFFDC2626)),
-                                  SizedBox(width: 8),
-                                  Text('Hapus', style: TextStyle(fontSize: 13, color: Color(0xFFDC2626), fontWeight: FontWeight.w600)),
-                                ]),
-                              ),
+                              if (likesCount > 0) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  '$likesCount',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: isLikedByMe ? const Color(0xFFE53935) : const Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
-                        ] else ...[
-                          const SizedBox(width: 6),
-                          // Bendera laporan untuk komentar orang lain
-                          InkWell(
-                            onTap: () => _reportComment(c),
-                            borderRadius: BorderRadius.circular(12),
-                            child: const Padding(
-                              padding: EdgeInsets.all(2),
-                              child: Icon(Icons.outlined_flag, size: 14, color: Color(0xFF94A3B8)),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
 
-            // =================================================================
-            // LIKE LOVE ALA INSTAGRAM (Pojok Kanan Luar Bubble)
-            // =================================================================
             Padding(
-              padding: const EdgeInsets.only(left: 8, top: 10),
-              child: Column(
+              padding: EdgeInsets.only(left: isReply ? 42 : 46, top: 4),
+              child: Row(
                 children: [
+                  Text(
+                    c['time'] as String,
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                  ),
+                  const SizedBox(width: 14),
                   InkWell(
-                    onTap: () => _toggleCommentLike(c),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: Icon(
-                        isLikedByMe ? Icons.favorite : Icons.favorite_border,
-                        size: 18,
-                        color: isLikedByMe ? const Color(0xFFE11D48) : const Color(0xFF94A3B8),
+                    onTap: () => _startReply(c),
+                    child: Text(
+                      'Balas',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: primaryColor,
                       ),
                     ),
                   ),
-                  if (likesCount > 0)
-                    Text(
-                      '$likesCount',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: isLikedByMe ? const Color(0xFFE11D48) : const Color(0xFF94A3B8),
+                  const SizedBox(width: 14),
+                  InkWell(
+                    onTap: () => _reportComment(c),
+                    child: const Icon(
+                      Icons.outlined_flag_rounded,
+                      size: 15,
+                      color: Color(0xFF94A3B8),
+                    ),
+                  ),
+                  if (isMe) ...[
+                    const SizedBox(width: 14),
+                    InkWell(
+                      onTap: () => _deleteCommentWithFade(c),
+                      child: const Icon(
+                        Icons.delete_outline_rounded,
+                        size: 15,
+                        color: Color(0xFFDC2626),
                       ),
                     ),
+                  ],
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 8. Bar Input Komentar Bawah (Anti-Overflow)
+  // ─────────────────────────────────────────────────────────────────────────────
+  Widget _buildBottomCommentInput(Color primaryColor) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    // Gunakan padding aman agar tidak overflow saat keyboard atau bilah navigasi aktif
+    final safeBottomPadding = bottomInset > 0 ? 8.0 : 8.0;
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(16, 8, 16, safeBottomPadding),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_replyingToName != null) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(8),
+                border: Border(left: BorderSide(color: primaryColor, width: 3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.reply_rounded, size: 16, color: primaryColor),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Membalas $_replyingToName',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: _cancelReply,
+                    child: const Icon(Icons.close, size: 16, color: Color(0xFF64748B)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          Row(
+            children: [
+              const ProfileAvatar(radius: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: TextField(
+                    controller: _commentController,
+                    focusNode: _commentFocusNode,
+                    style: const TextStyle(fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: _replyingToName != null
+                          ? 'Tulis balasan untuk $_replyingToName...'
+                          : 'Tulis tanggapan atau pertanyaan...',
+                      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              InkWell(
+                onTap: _sendComment,
+                borderRadius: BorderRadius.circular(24),
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: primaryColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Icon(Icons.send, color: Colors.white, size: 18),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Banner grafis default jika postingan tidak memiliki file gambar
+  // ─────────────────────────────────────────────────────────────────────────────
+  Widget _buildDefaultGraphicBanner(Color primaryColor) {
+    final gradient = _post?.bannerGradient ?? const [Color(0xFF004528), Color(0xFF1B6D24)];
+    final icon = _post?.bannerIcon ?? Icons.workspace_premium;
+    final title = _post?.bannerTitle ?? 'POSTINGAN KAMPUS UNAND';
+    final subtitle = _post?.bannerSubtitle ?? 'UKM HUB UNIVERSITAS ANDALAS';
+
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        color: gradient.first,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: gradient,
+        ),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned(
+            right: -20,
+            bottom: -20,
+            child: Icon(
+              icon,
+              size: 200,
+              color: Colors.white.withValues(alpha: 0.1),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 56, color: const Color(0xFFFACC15)),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 18,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFF93D5AA),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

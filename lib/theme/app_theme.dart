@@ -43,6 +43,7 @@ class AppTheme {
     );
   }
 
-  // Backward compatibility: alias dark to light as requested
+   // Backward compatibility: alias dark to light as requested
   static ThemeData get dark => light;
+
 }

@@ -55,9 +55,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SizedBox.expand(
           child: Column(
@@ -75,7 +76,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           const AppLogoBadge(size: 68),
                           const SizedBox(height: AppSpacing.md),
                           Text(
-                            'Login MyPKM',
+                            'Login MyUKMUnand',
                             style: AppTextStyles.h1.copyWith(
                               color: const Color(0xFF0F172A),
                               fontWeight: FontWeight.w800,
@@ -85,7 +86,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            ' Ayo Kenali PKM di Universitas Andalas',
+                            'Ayo Kenali UKM di Universitas Andalas',
                             style: AppTextStyles.bodyRegular.copyWith(
                               color: const Color(0xFF64748B),
                               fontSize: 13,
@@ -93,186 +94,178 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: AppSpacing.lg),
-
-                    // Card Form Putih dengan Border Halus & Soft Shadow
-                    Container(
-                      padding: const EdgeInsets.all(AppSpacing.lg),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 20,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: Form(
-                        key: _formKey,
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
-                        child: Column(
-                          children: [
-                            AuthTextField(
-                              label: 'Email Mahasiswa',
-                              hintText: 'Masukkan Email Anda',
-                              leadingIcon: Icons.mail_outline_rounded,
-                              controller: _emailOrNimController,
-                              keyboardType: TextInputType.emailAddress,
-                              textInputAction: TextInputAction.next,
-                              validator: Validators.email,
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            AuthTextField(
-                              label: 'Kata Sandi Portal',
-                              hintText: '••••••••••••',
-                              leadingIcon: Icons.lock_outline_rounded,
-                              controller: _passwordController,
-                              obscureText: authState.obscurePassword,
-                              textInputAction: TextInputAction.done,
-                              trailing: IconButton(
-                                icon: Icon(
-                                  authState.obscurePassword
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
-                                  size: 20,
-                                  color: const Color(0xFF64748B),
-                                ),
-                                onPressed: () => ref
-                                    .read(authControllerProvider.notifier)
-                                    .toggleObscurePassword(),
-                              ),
-                              validator: Validators.password,
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            Row(
-                              children: [
-                                CircularCheckbox(
-                                  value: authState.rememberMe,
-                                  onChanged: (_) => ref
-                                      .read(authControllerProvider.notifier)
-                                      .toggleRememberMe(),
-                                ),
-                                const SizedBox(width: AppSpacing.sm),
-                                Text(
-                                  'Ingat saya',
-                                  style: AppTextStyles.bodyRegular.copyWith(
-                                    color: const Color(0xFF334155),
-                                    fontSize: 13,
-                                  ),
-                                ),
-                                const Spacer(),
-                                GestureDetector(
-                                  onTap: () => _openPlaceholder('Lupa Sandi'),
-                                  child: Text(
-                                    'Lupa Sandi?',
-                                    style: AppTextStyles.link.copyWith(
-                                      color: const Color(0xFF1B5E3C),
-                                      fontSize: 13,
-                                    ),
-                                  ),
+                          // Form Card
+                          Container(
+                            padding: const EdgeInsets.all(AppSpacing.lg),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF152219) : Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.04),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 6),
                                 ),
                               ],
                             ),
-                            if (authState.errorMessage != null) ...[
-                              const SizedBox(height: AppSpacing.sm),
+                            child: Form(
+                              key: _formKey,
+                              autovalidateMode: AutovalidateMode.onUserInteraction,
+                              child: Column(
+                                children: [
+                                  AuthTextField(
+                                    label: 'Email Mahasiswa',
+                                    hintText: '',
+                                    leadingIcon: Icons.mail_outline_rounded,
+                                    controller: _emailOrNimController,
+                                    keyboardType: TextInputType.emailAddress,
+                                    textInputAction: TextInputAction.next,
+                                    validator: Validators.email,
+                                  ),
+                                  const SizedBox(height: AppSpacing.md),
+                                  AuthTextField(
+                                    label: 'Kata Sandi Portal',
+                                    hintText: '••••••••••••',
+                                    leadingIcon: Icons.lock_outline_rounded,
+                                    controller: _passwordController,
+                                    obscureText: authState.obscurePassword,
+                                    textInputAction: TextInputAction.done,
+                                    trailing: IconButton(
+                                      icon: Icon(
+                                        authState.obscurePassword
+                                            ? Icons.visibility_outlined
+                                            : Icons.visibility_off_outlined,
+                                        size: 20,
+                                        color: const Color(0xFF64748B),
+                                      ),
+                                      onPressed: () => ref
+                                          .read(authControllerProvider.notifier)
+                                          .toggleObscurePassword(),
+                                    ),
+                                    validator: Validators.password,
+                                  ),
+                                  const SizedBox(height: AppSpacing.md),
+                                  Row(
+                                    children: [
+                                      CircularCheckbox(
+                                        value: authState.rememberMe,
+                                        onChanged: (_) => ref
+                                            .read(authControllerProvider.notifier)
+                                            .toggleRememberMe(),
+                                      ),
+                                      const SizedBox(width: AppSpacing.sm),
+                                      Text(
+                                        'Ingat saya',
+                                        style: AppTextStyles.bodyRegular.copyWith(
+                                          color: const Color(0xFF334155),
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      GestureDetector(
+                                        onTap: () => _openPlaceholder('Lupa Sandi'),
+                                        child: Text(
+                                          'Lupa Sandi?',
+                                          style: AppTextStyles.link.copyWith(
+                                            color: const Color(0xFF1B5E3C),
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (authState.errorMessage != null) ...[
+                                    const SizedBox(height: AppSpacing.sm),
+                                    Text(
+                                      authState.errorMessage!,
+                                      style: AppTextStyles.bodyRegular.copyWith(color: AppColors.error),
+                                    ),
+                                  ],
+                                  const SizedBox(height: AppSpacing.lg),
+                                  GradientButton(
+                                    label: 'Masuk Sekarang',
+                                    trailingIcon: Icons.arrow_forward_rounded,
+                                    isLoading: authState.isSubmitting,
+                                    onPressed: _handleSubmit,
+                                  ),
+                                  const SizedBox(height: AppSpacing.lg),
+                                  Row(
+                                    children: [
+                                      const Expanded(child: Divider(color: Color(0xFFE2E8F0))),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                                        child: Text(
+                                          'ATAU MASUK RESMI VIA',
+                                          style: AppTextStyles.caption.copyWith(
+                                            color: const Color(0xFF94A3B8),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                      const Expanded(child: Divider(color: Color(0xFFE2E8F0))),
+                                    ],
+                                  ),
+                                  const SizedBox(height: AppSpacing.lg),
+                                  SsoButton(
+                                    label: 'SSO Universitas Andalas',
+                                    onPressed: () => _openPlaceholder('SSO Universitas Andalas'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                          // Register link
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
                               Text(
-                                authState.errorMessage!,
-                                style: AppTextStyles.bodyRegular.copyWith(
-                                  color: AppColors.error,
+                                'Mahasiswa baru belum punya akun? ',
+                                style: AppTextStyles.bodyRegular.copyWith(color: const Color(0xFF64748B)),
+                              ),
+                              GestureDetector(
+                                onTap: () => Navigator.of(context).pushNamed(AppRoutes.register),
+                                child: Text(
+                                  'Aktivasi Akun',
+                                  style: AppTextStyles.link.copyWith(
+                                    color: const Color(0xFF1B5E3C),
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ),
                             ],
-                            const SizedBox(height: AppSpacing.lg),
-                            GradientButton(
-                              label: 'Masuk Sekarang',
-                              trailingIcon: Icons.arrow_forward_rounded,
-                              isLoading: authState.isSubmitting,
-                              onPressed: _handleSubmit,
-                            ),
-                            const SizedBox(height: AppSpacing.lg),
-                            Row(
-                              children: [
-                                const Expanded(
-                                  child: Divider(color: Color(0xFFE2E8F0)),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-                                  child: Text(
-                                    'ATAU MASUK RESMI VIA',
-                                    style: AppTextStyles.caption.copyWith(
-                                      color: const Color(0xFF94A3B8),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                                const Expanded(
-                                  child: Divider(color: Color(0xFFE2E8F0)),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: AppSpacing.lg),
-                            SsoButton(
-                              label: 'SSO Universitas Andalas',
-                              onPressed: () => _openPlaceholder('SSO Universitas Andalas'),
-                            ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.lg),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text(
-                          'Mahasiswa baru belum punya akun? ',
-                          style: AppTextStyles.bodyRegular.copyWith(
-                            color: const Color(0xFF64748B),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () => Navigator.of(context).pushNamed(AppRoutes.register),
-                          child: Text(
-                            'Aktivasi Akun',
-                            style: AppTextStyles.link.copyWith(
-                              color: const Color(0xFF1B5E3C),
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                  ],
+                  ),
                 ),
               ),
-            ),
+              _AuthFooter(onTap: _openPlaceholder),
+            ],
           ),
         ),
-        _AuthFooter(onTap: _openPlaceholder),
-      ],
-    ),
-  ),
-),
-);
-}
+      ),
+    );
+  }
 }
 
 class _AuthFooter extends StatelessWidget {
   const _AuthFooter({required this.onTap});
 
   final ValueChanged<String> onTap;
-
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF152219) : Colors.white,
+        border: const Border(top: BorderSide(color: Color(0xFFF1F5F9))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,

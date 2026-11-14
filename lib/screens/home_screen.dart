@@ -2,17 +2,19 @@ import 'package:flutter/material.dart';
 
 import '../core/routing/app_routes.dart';
 import '../models/campus_post.dart';
-import '../models/ukm.dart';
+import '../services/storage_service.dart';
+import '../widgets/profile_avatar.dart';
 
 /// Halaman Beranda (Home Screen) untuk aplikasi "UKM Hub Unand".
-/// 
-/// Dibuat persis 100% sesuai dengan desain:
-/// - Fixed layout tanpa vertical scroll pada struktur utama.
-/// - Header dengan wave/lengkungan asimetris hijau (#2C6E49).
-/// - Floating search bar berbentuk pil + filter button hijau.
-/// - Section UKM UNAND (kartu putih berisi horizontal list 4 UKM).
-/// - Section Postingan (Expanded dengan horizontal list card berbayang).
-/// - Bottom Navigation Bar rounded green dengan active pill pada icon Home.
+///
+/// Dibuat persis 100% sesuai dengan desain revisi:
+/// - Background menggunakan gambar 'bgpkm.jpg' di bagian atas dikombinasikan dengan lengkungan hijau organik.
+/// - Header: "MyUKM HubUnand" tebal putih di kiri & tombol kapsul hitam "You [Avatar]" di kanan.
+/// - Banner Slider interaktif (gambar BEM KM UNAND dll) yang dapat digeser (swipe) atau ditekan titik tiga/dots-nya.
+/// - Section Postingan horizontal dengan animasi geser mulus (smooth PageView) berbayang rapi.
+/// - Tombol Search & Filter dipindahkan ke bagian bawah (di atas Bottom Navigation Bar).
+/// - Bottom Navigation Bar hijau dengan garis arch melengkung dan active pill indicator.
+/// - Fixed layout tanpa vertical scroll utama agar anti overflow di berbagai ukuran layar.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -23,64 +25,94 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   // Warna Utama & Tema
   static const Color primaryGreen = Color(0xFF2C6E49);
-  static const Color backgroundColor = Color(0xFFF5F7F5);
+  static const Color backgroundColor = Color(0xFFEBF1EC);
   static const Color navPillColor = Color(0xFF427C5C);
-  static const Color ukmBlueColor = Color(0xFF027FF3);
 
   // Indeks aktif Bottom Navigation Bar
   int _selectedNavIndex = 0;
 
-  // Data Dummy UKM (4 item sesuai desain)
-  final List<_UkmItemData> _ukmList = const [
-    _UkmItemData(
-      id: 'aiesec',
-      name: 'AIESEC in\nUNAND',
-      isBlue: true,
-      category: 'Kepemimpinan & Internasional',
+  // Banner Carousel State
+  late final PageController _bannerController;
+  int _currentBannerIndex = 0;
+
+  // Post Carousel State
+  late final PageController _postController;
+  int _currentPostIndex = 0;
+
+  // Data Banner Slider (Menggunakan aset-aset asli UNAND di assets/images/)
+  final List<_BannerItem> _banners = const [
+    _BannerItem(
+      imageAsset: 'assets/images/bemkm.jpg',
+      badgeText: 'BEM KM UNAND',
+      logoAsset: 'assets/images/logounand.jpg',
     ),
-    _UkmItemData(
-      id: 'neo-telemetri',
-      name: 'Neo\nTelemetri',
-      isBlue: true,
-      category: 'Teknologi & Informasi',
+    _BannerItem(
+      imageAsset: 'assets/images/fotoaiesec.jpg',
+      badgeText: 'AIESEC UNAND',
+      logoAsset: 'assets/images/logoaiesec.jpg',
     ),
-    _UkmItemData(
-      id: 'mapala',
-      name: 'Mapala\n',
-      isBlue: true,
-      category: 'Pecinta Alam',
+    _BannerItem(
+      imageAsset: 'assets/images/firetech.jpeg',
+      badgeText: 'NEO TELEMETRI',
+      logoAsset: 'assets/images/logoneo.png',
     ),
-    _UkmItemData(
-      id: 'ukm-lainnya',
-      name: 'UKM\nLainnya',
-      isBlue: false,
-      category: 'Semua Kategori',
+    _BannerItem(
+      imageAsset: 'assets/images/mapala.jpeg',
+      badgeText: 'MAPALA UNAND',
+      logoAsset: 'assets/images/mapalalogo.png',
     ),
   ];
 
-  // Data Dummy Postingan (Menggunakan judul dan detail persis dari desain)
+  // Data Postingan (Sesuai mockup & data kampus terkini)
   late final List<CampusPost> _posts;
 
   @override
   void initState() {
     super.initState();
+    _bannerController = PageController();
+    _postController = PageController(viewportFraction: 0.78);
+
     _posts = [
+      // Postingan persis seperti pada gambar desain mockup
+      const CampusPost(
+        id: 'post-rezim-gibran',
+        authorName: 'LiputanMahasiswaNguwawor',
+        authorSubtitle: 'Baru saja',
+        categoryBadge: 'Berita',
+        icon: Icons.terminal_rounded,
+        iconBgColor: Colors.black,
+        iconColor: Colors.white,
+        assetImagePath: 'assets/images/pace.jpg',
+        bannerTitle: 'OPINI & ANALISIS TEKNOLOGI',
+        bannerSubtitle: 'Perspektif Mahasiswa Unand',
+        bannerGradient: [Color(0xFF1E3A8A), Color(0xFF0F172A)],
+        bannerIcon: Icons.article_rounded,
+        title: 'Serangan tentara TNI berhasil menumbangkan satu anggota OPM, Kobo Kanaeru selaku Ketua Guild OPM :" sA GAgAl BOyaH"',
+        description: 'Kobo Kanaeru selaku Ketua Guild Pace OPM langsung merespons lewat open mic dengan suara melengking khasnya yang campur aduk antara panik dan kesal. "sa dah bilang, ko jangan macam" dengan kami kalau tidak ingin mati, ko pikir ko karakter utama anime ka?! Knock satu, cik!" teriak Kobo dengan imut ',
+        fullContent: 'Diskusi publik dan kajian mahasiswa terus bergulir dalam menyoroti berbagai kebijakan publik serta arah perkembangan ekosistem riset dan teknologi kampus di masa depan.',
+        tags: ['#OpiniKampus', '#DiskusiUnand', '#NeoTelemetri'],
+        initialLikes: 1067,
+        initialComments: 5,
+        time: '13 November 2026',
+        location: 'Universitas Andalas',
+        isVerified: true,
+      ),
       const CampusPost(
         id: 'post-ai-danger',
-        authorName: 'Neotelemetri',
+        authorName: 'BEM KM UNAND',
         authorSubtitle: '13 November 2026',
         categoryBadge: 'Event',
         icon: Icons.terminal_rounded,
         iconBgColor: Colors.black,
         iconColor: Colors.white,
-        assetImagePath: 'assets/images/hacker.jpg',
+        assetImagePath: 'assets/images/wowok.jpg',
         bannerTitle: 'AI & MASA DEPAN TEKNOLOGI',
         bannerSubtitle: 'SEMINAR & WORKSHOP NASIONAL 2026',
         bannerGradient: [Color(0xFF0F172A), Color(0xFF1E293B)],
         bannerIcon: Icons.smart_toy_rounded,
-        title: 'Ini Judul Postingan, Misal : Lari !!!, selamatkan diri anda dari AI yang meraja lela',
-        description: 'Tantangan era kecerdasan buatan bagi mahasiswa. Pelajari bagaimana beradaptasi dan berkembang di era otomatisasi.',
-        fullContent: 'Perkembangan kecerdasan buatan (Artificial Intelligence) berkembang sangat pesat dalam beberapa tahun terakhir. UKM Neo Telemetri mengajak seluruh mahasiswa Universitas Andalas untuk mendiskusikan peluang dan tantangan nyata AI.',
+        title: 'Gibran mengajak prabowo untuk mundur bersama, Prabowo : Oke Gas oke Gas',
+        description: 'Di tengah memanasnya tekanan politik di Istana Merdeka, Gibran meletakkan surat pengunduran dirinya di atas meja dan menatap Prabowo. "Pak, bagaimana kalau kita juga mundur bersama agar situasi tenang?" ujar Gibran serius. Teddy menatap sinis, lalu hendak mengusir gibran, prabowo menghentikan nya, lalu tersenyum lebar dan menjawab "Oke gas, oke gas!" sambil dance tiktok body pata pata',
+        fullContent: 'Di tengah memanasnya tekanan politik di Istana Merdeka, Gibran meletakkan surat pengunduran dirinya di atas meja dan menatap Prabowo. "Pak, bagaimana kalau kita juga mundur bersama agar situasi tenang?" ujar Gibran serius. Teddy menatap sinis, lalu hendak mengusir gibran, prabowo menghentikan nya, lalu tersenyum lebar dan menjawab "Oke gas, oke gas!" sambil dance tiktok body pata pata',
         tags: ['#NeoTelemetri', '#ArtificialIntelligence', '#EventUnand', '#TechSeminar'],
         initialLikes: 128,
         initialComments: 5,
@@ -89,7 +121,15 @@ class _HomeScreenState extends State<HomeScreen> {
         isVerified: true,
       ),
       if (dummyCampusPosts.isNotEmpty) dummyCampusPosts.first,
+      if (dummyCampusPosts.length > 1) dummyCampusPosts[1],
     ];
+  }
+
+  @override
+  void dispose() {
+    _bannerController.dispose();
+    _postController.dispose();
+    super.dispose();
   }
 
   @override
@@ -98,148 +138,131 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: backgroundColor,
+
       body: Stack(
         children: [
-          // ─── 1. Background Wave Lengkungan Asimetris Hijau ───
+          // ─── 1. Background Image 'bgpkm.jpg' di Bagian Atas ───
           Positioned(
             top: 0,
             left: 0,
             right: 0,
             height: screenHeight * 0.46,
-            child: CustomPaint(
-              painter: _HeaderWavePainter(color: primaryGreen),
+            child: Image.asset(
+              'assets/images/bgpkm.jpg',
+              fit: BoxFit.cover,
+              alignment: Alignment.topRight,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(color: primaryGreen);
+              },
             ),
           ),
 
-          // ─── 2. Struktur Utama (Fixed Column - Tanpa Scroll Vertikal) ───
+          // ─── 2. Lengkungan Hijau Organik (#2C6E49) di Sisi Kiri Atas ───
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: screenHeight * 0.52,
+            child: CustomPaint(
+              painter: _HeaderGreenCurvePainter(color: primaryGreen),
+            ),
+          ),
+
+          // ─── 3. Struktur Konten Utama (Fixed Column - Pas di Layar) ───
           SafeArea(
             bottom: false,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header Atas (Avatar, Greeting, Bell)
+                // Header: "MyUKM HubUnand" & Tombol Kapsul "You"
                 _buildHeader(),
 
-                // Search Bar (Melayang di atas batas lengkungan)
-                _buildSearchBar(),
+                const SizedBox(height: 10),
 
-                // Section UKM UNAND (Kartu Putih Horizontal)
-                _buildUkmSection(),
+                // Banner Slider (Swipeable + Dots Indicator interaktif)
+                _buildBannerSlider(screenHeight),
 
-                // Section Postingan: Judul
-                _buildPostinganHeader(),
+                const SizedBox(height: 12),
 
-                // Section Postingan: Horizontal List (Expanded agar pas & anti-overflow)
+                // Carousel Postingan Horizontal (Smooth PageView)
                 Expanded(
-                  child: _buildPostinganList(),
+                  child: _buildPostinganCarousel(),
                 ),
+
+                const SizedBox(height: 10),
+
+                // Search Bar & Filter Button (Dipindahkan ke Bawah)
+                _buildSearchAndFilterBar(),
+
+                const SizedBox(height: 8),
               ],
             ),
           ),
         ],
       ),
-      // ─── 3. Bottom Navigation Bar ───
+      // ─── 4. Bottom Navigation Bar ───
       bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 1. Header (Avatar, Halo Lutfi, Bell Notifikasi)
+  // 1. Header: "MyUKM HubUnand" & Kapsul "You [Avatar]"
   // ─────────────────────────────────────────────────────────────────────────────
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Avatar Bundar Putih
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: ClipOval(
-              child: Center(
-                child: Icon(
-                  Icons.groups_rounded,
-                  color: primaryGreen,
-                  size: 26,
-                ),
+          // Teks Judul "MyUKM HubUnand" Dua Baris Tebal Putih
+          const Expanded(
+            child: Text(
+              'MyUKM\nHubUnand',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 27,
+                fontWeight: FontWeight.w900,
+                height: 1.15,
+                letterSpacing: -0.5,
               ),
             ),
           ),
-          const SizedBox(width: 12),
 
-          // Teks Sapaan "Halo Lutfi," & Subtitle
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                RichText(
-                  text: const TextSpan(
-                    text: 'Halo ',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                      letterSpacing: -0.2,
-                    ),
-                    children: [
-                      TextSpan(
-                        text: 'Lutfi,',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Siap menjelajahi UKM di UNAND?',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.white.withValues(alpha: 0.95),
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Ikon Lonceng Notifikasi Outline Hitam
-          InkWell(
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Tidak ada notifikasi baru'),
-                  duration: Duration(seconds: 1),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              width: 42,
-              height: 42,
-              decoration: const BoxDecoration(
-                color: Colors.transparent,
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.notifications_none_rounded,
+          // Kapsul Hitam "You [Avatar]" di Pojok Kanan Atas
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                Navigator.pushNamed(context, AppRoutes.profile, arguments: true);
+              },
+              borderRadius: BorderRadius.circular(22),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                decoration: BoxDecoration(
                   color: Colors.black,
-                  size: 26,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.25),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _currentDisplayTitleName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const ProfileAvatar(radius: 12),
+                  ],
                 ),
               ),
             ),
@@ -250,11 +273,407 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 2. Search Bar & Filter Button
+  // 2. Banner Slider (Swipeable + Dots Indicator interaktif)
+  // ────────────────────────────────────────────────────────────────────────────
+  Widget _buildBannerSlider(double screenHeight) {
+    final bannerHeight = (screenHeight * 0.21).clamp(160.0, 195.0);
+
+    return Container(
+      height: bannerHeight,
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.14),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
+            // PageView Banner Gambar
+            PageView.builder(
+              controller: _bannerController,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentBannerIndex = index;
+                });
+              },
+              itemCount: _banners.length,
+              itemBuilder: (context, index) {
+                final banner = _banners[index];
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Gambar Utama Banner
+                    Image.asset(
+                      banner.imageAsset,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: const Color(0xFF1E293B),
+                          child: const Center(
+                            child: Icon(Icons.image, color: Colors.white54, size: 48),
+                          ),
+                        );
+                      },
+                    ),
+
+                    // Gradien Halus di Atas & Bawah agar Teks dan Dots Tetap Kontras
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.black.withValues(alpha: 0.25),
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.35),
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          stops: const [0.0, 0.5, 1.0],
+                        ),
+                      ),
+                    ),
+
+                    // Badge Kapsul Putih di Kiri Atas (Logo UKM + Nama)
+                    Positioned(
+                      top: 12,
+                      left: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.15),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: Image.asset(
+                                banner.logoAsset,
+                                width: 18,
+                                height: 18,
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Icon(
+                                    Icons.school_rounded,
+                                    color: primaryGreen,
+                                    size: 16,
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              banner.badgeText,
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+
+            // Indikator Titik Tiga / Dots Interaktif di Tengah Bawah Banner
+            Positioned(
+              bottom: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: primaryGreen.withValues(alpha: 0.88),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.18),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(
+                    _banners.length,
+                    (index) {
+                      final isActive = _currentBannerIndex == index;
+                      return GestureDetector(
+                        onTap: () {
+                          _bannerController.animateToPage(
+                            index,
+                            duration: const Duration(milliseconds: 320),
+                            curve: Curves.easeInOut,
+                          );
+                        },
+                        behavior: HitTestBehavior.opaque,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          width: isActive ? 14 : 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: isActive
+                                ? Colors.white
+                                : Colors.white.withValues(alpha: 0.45),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ─────────────────────────────────────────────────────────────────────────────
-  Widget _buildSearchBar() {
+  // 3. Carousel Postingan Horizontal (Smooth PageView)
+  // ─────────────────────────────────────────────────────────────────────────────
+  Widget _buildPostinganCarousel() {
+    return PageView.builder(
+      controller: _postController,
+      onPageChanged: (index) {
+        setState(() {
+          _currentPostIndex = index;
+        });
+      },
+      physics: const BouncingScrollPhysics(),
+      itemCount: _posts.length,
+      itemBuilder: (context, index) {
+        final post = _posts[index];
+        final isCenter = _currentPostIndex == index;
+
+        return AnimatedScale(
+          scale: isCenter ? 1.0 : 0.96,
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOut,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+            child: _buildPostCard(post),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPostCard(CampusPost post) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              Navigator.pushNamed(
+                context,
+                AppRoutes.postDetail,
+                arguments: post,
+              );
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1. Gambar Postingan dengan Logo UKM Bundar di Kanan Atas
+                Expanded(
+                  flex: 3,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      if (post.assetImagePath != null)
+                        Image.asset(
+                          post.assetImagePath!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return _buildThumbnailFallback(post);
+                          },
+                        )
+                      else
+                        _buildThumbnailFallback(post),
+
+                      // Vignette halus
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.25),
+                            ],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                        ),
+                      ),
+
+                      // Logo UKM Bundar di Pojok Kanan Atas Gambar
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 1.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.25),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ClipOval(
+                            child: Padding(
+                              padding: const EdgeInsets.all(4),
+                              child: Image.asset(
+                                'assets/images/logoneo.png',
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Icon(
+                                    Icons.terminal_rounded,
+                                    color: Colors.white,
+                                    size: 16,
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // 2. Info Postingan: Judul, Panah, Likes, Comments, Share
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Judul Postingan & Panah Kanan
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              post.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF0F172A),
+                                height: 1.25,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Padding(
+                            padding: EdgeInsets.only(top: 2),
+                            child: Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 13,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      // Footer Stats: Heart Likes, Chat Comments, Open Share
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.favorite,
+                            color: Color(0xFFE53935),
+                            size: 16,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            '${post.initialLikes}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF334155),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          const Icon(
+                            Icons.chat_bubble_outline_rounded,
+                            color: Color(0xFF64748B),
+                            size: 15,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            '${post.initialComments}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF334155),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          const Icon(
+                            Icons.open_in_new_rounded,
+                            color: Color(0xFF64748B),
+                            size: 16,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 4. Search Bar & Filter Button (Dipindahkan ke Bawah)
+  // ─────────────────────────────────────────────────────────────────────────────
+  Widget _buildSearchAndFilterBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 6, 20, 12),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
           // Container Putih Berbentuk Pill dengan Soft Shadow
@@ -267,10 +686,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.10),
-                    blurRadius: 18,
-                    offset: const Offset(0, 5),
-                    spreadRadius: 1,
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 14,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -278,8 +696,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: const [
                   Icon(
                     Icons.search_rounded,
-                    color: Colors.black,
-                    size: 24,
+                    color: Color(0xFF1E293B),
+                    size: 22,
                   ),
                   SizedBox(width: 10),
                   Text(
@@ -296,7 +714,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(width: 12),
 
-          // Kotak Filter Hijau dengan 3 Garis Putih
+          // Tombol Filter Hijau (#2C6E49) Kotak Sudut Membulat
           Container(
             width: 48,
             height: 48,
@@ -306,445 +724,36 @@ class _HomeScreenState extends State<HomeScreen> {
               boxShadow: [
                 BoxShadow(
                   color: primaryGreen.withValues(alpha: 0.35),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 20,
-                    height: 2.5,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 3.5),
-                  Container(
-                    width: 14,
-                    height: 2.5,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 3.5),
-                  Container(
-                    width: 8,
-                    height: 2.5,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 3. Section UKM UNAND (Kartu Putih Besar)
-  // ─────────────────────────────────────────────────────────────────────────────
-  Widget _buildUkmSection() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header: UKM UNAND & Lihat Semua
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'UKM UNAND',
-                style: TextStyle(
-                  color: primaryGreen,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 15,
-                  letterSpacing: 0.2,
-                ),
-              ),
-              InkWell(
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
                 onTap: () {
-                  final dummyUkm = Ukm(
-                    id: 'ukm-all',
-                    name: 'Daftar Seluruh UKM',
-                    category: 'Universitas Andalas',
-                    description: 'Kumpulan seluruh Unit Kegiatan Mahasiswa di Universitas Andalas.',
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Filter UKM'),
+                      duration: Duration(seconds: 1),
+                      behavior: SnackBarBehavior.floating,
+                    ),
                   );
-                  Navigator.pushNamed(context, AppRoutes.detail, arguments: dummyUkm);
                 },
-                child: const Text(
-                  'Lihat Semua',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 11,
-                    decoration: TextDecoration.underline,
+                borderRadius: BorderRadius.circular(16),
+                child: const Center(
+                  child: Icon(
+                    Icons.menu_rounded,
+                    color: Colors.white,
+                    size: 24,
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Horizontal List 4 UKM
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: _ukmList.map((item) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 14),
-                  child: InkWell(
-                    onTap: () {
-                      final ukm = Ukm(
-                        id: item.id,
-                        name: item.name.replaceAll('\n', ' '),
-                        category: item.category,
-                        description: 'Unit Kegiatan Mahasiswa ${item.name.replaceAll('\n', ' ')} di Universitas Andalas.',
-                      );
-                      Navigator.pushNamed(context, AppRoutes.detail, arguments: ukm);
-                    },
-                    borderRadius: BorderRadius.circular(14),
-                    child: SizedBox(
-                      width: 62,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Kotak Ikon / Logo
-                          Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: item.isBlue ? ukmBlueColor : Colors.black,
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Center(
-                              child: item.isBlue
-                                  ? const Icon(
-                                      Icons.directions_walk_rounded,
-                                      color: Colors.white,
-                                      size: 32,
-                                    )
-                                  : Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                                      child: Image.asset(
-                                        'assets/images/firetech neo.jpeg',
-                                        width: 38,
-                                        height: 38,
-                                        fit: BoxFit.contain,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return const Text(
-                                            'TELEMETRI',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 7,
-                                              fontWeight: FontWeight.w900,
-                                              letterSpacing: 0.5,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          );
-                                        },
-                                      ),
-                                    ),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-
-                          // Teks Judul Dua Baris
-                          Text(
-                            item.name,
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                              height: 1.15,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 4. Section Postingan Header & List
-  // ─────────────────────────────────────────────────────────────────────────────
-  Widget _buildPostinganHeader() {
-    return const Padding(
-      padding: EdgeInsets.fromLTRB(16, 12, 16, 6),
-      child: Text(
-        'Postingan',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: ,
-          fontWeight: FontWeight.w900,
-          letterSpacing: -0.3,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPostinganList() {
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    return ListView.builder(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      itemCount: _posts.length,
-      itemBuilder: (context, index) {
-        final post = _posts[index];
-        return Container(
-          width: screenWidth * 0.78,
-          margin: const EdgeInsets.only(right: 14),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
-                blurRadius: 14,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. Header Postingan (Avatar, Nama, Tanggal, Badge Capsule "Event")
-              Row(
-                children: [
-                  Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Center(
-                      child: Image.asset(
-                        'assets/images/firetech neo.jpeg',
-                        width: 22,
-                        height: 22,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(
-                            Icons.terminal_rounded,
-                            color: Colors.white,
-                            size: 16,
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          post.authorName,
-                          style: const TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.black,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          post.time,
-                          style: const TextStyle(
-                            fontSize: 9.5,
-                            color: Color(0xFF757575),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE0EFE5),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: const Color(0xFF66BB6A),
-                        width: 1,
-                      ),
-                    ),
-                    child: const Text(
-                      'Event',
-                      style: TextStyle(
-                        color: primaryGreen,
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // 2. Thumbnail (Expanded agar elastis dan anti-overflow)
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    width: double.infinity,
-                    color: const Color(0xFF1E1E1E),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Image.network(
-                          'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=600&q=80',
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Image.asset(
-                              'assets/images/hacker.jpg',
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  decoration: const BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                  ),
-                                  child: const Center(
-                                    child: Icon(
-                                      Icons.smart_toy_rounded,
-                                      color: Colors.white70,
-                                      size: 40,
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        ),
-                        // Soft cinematic vignette
-                        Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Colors.transparent,
-                                Colors.black.withValues(alpha: 0.35),
-                              ],
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // 3. Judul Postingan
-              Text(
-                post.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.black,
-                  height: 1.25,
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // 4. Footer Postingan (Suka, Komentar, Lihat Postingan)
-              Row(
-                children: [
-                  const Icon(
-                    Icons.favorite,
-                    color: Color(0xFFE53935),
-                    size: 14,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${post.initialLikes} Suka',
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: Color(0xFF616161),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Icon(
-                    Icons.chat_bubble_outline_rounded,
-                    color: Color(0xFF616161),
-                    size: 13,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${post.initialComments} Komentar',
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: Color(0xFF616161),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const Spacer(),
-                  InkWell(
-                    onTap: () {
-                      Navigator.pushNamed(
-                        context,
-                        AppRoutes.postDetail,
-                        arguments: post,
-                      );
-                    },
-                    child: const Text(
-                      'Lihat Postingan >',
-                      style: TextStyle(
-                        color: primaryGreen,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 
@@ -834,6 +843,9 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _selectedNavIndex = index;
         });
+        if (index == 3) {
+          Navigator.pushNamed(context, AppRoutes.profile, arguments: true);
+        }
       },
       behavior: HitTestBehavior.opaque,
       child: isActive
@@ -863,32 +875,61 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
     );
   }
+
+  // ── Helper: Nama tampilan untuk tombol kapsul pojok kanan atas ──────────
+  String get _currentDisplayTitleName {
+    final name = StorageService.instance.displayName;
+    if (name.isEmpty) return 'You';
+    return name[0].toUpperCase() + name.substring(1);
+  }
+
+  // ── Helper: Fallback widget jika thumbnail asset tidak ditemukan ─────────
+  Widget _buildThumbnailFallback(CampusPost post) {
+    final gradient = post.bannerGradient.isNotEmpty
+        ? post.bannerGradient
+        : const [Color(0xFF0F172A), Color(0xFF1E293B)];
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: gradient,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          post.bannerIcon,
+          color: Colors.white70,
+          size: 40,
+        ),
+      ),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Model Data Internal UKM
+// Model Data Item Banner Slider
 // ─────────────────────────────────────────────────────────────────────────────
-class _UkmItemData {
-  final String id;
-  final String name;
-  final bool isBlue;
-  final String category;
+class _BannerItem {
+  final String imageAsset;
+  final String badgeText;
+  final String logoAsset;
 
-  const _UkmItemData({
-    required this.id,
-    required this.name,
-    required this.isBlue,
-    required this.category,
+  const _BannerItem({
+    required this.imageAsset,
+    required this.badgeText,
+    required this.logoAsset,
   });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Painter Lengkungan Asimetris Hijau (#2C6E49)
+// Painter Lengkungan Hijau Organik (#2C6E49) Sesuai Desain Mockup
 // ─────────────────────────────────────────────────────────────────────────────
-class _HeaderWavePainter extends CustomPainter {
+class _HeaderGreenCurvePainter extends CustomPainter {
   final Color color;
 
-  const _HeaderWavePainter({required this.color});
+  const _HeaderGreenCurvePainter({required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -898,27 +939,26 @@ class _HeaderWavePainter extends CustomPainter {
 
     final path = Path();
     path.moveTo(0, 0);
-    // Garis atas dari kiri ke sekitar 56% lebar layar
-    path.lineTo(size.width * 0.56, 0);
+    path.lineTo(size.width * 0.64, 0);
 
-    // Lengkungan halus pertama ke arah kanan-bawah
+    // Lengkungan pertama dari batas atas ke samping kanan teks header
     path.cubicTo(
-      size.width * 0.68,
-      size.height * 0.15,
-      size.width * 0.72,
-      size.height * 0.40,
-      size.width * 0.58,
-      size.height * 0.62,
+      size.width * 0.66,
+      size.height * 0.20,
+      size.width * 0.52,
+      size.height * 0.36,
+      size.width * 0.45,
+      size.height * 0.50,
     );
 
-    // Lengkungan kedua meliuk kembali ke sisi kiri bawah
+    // Lengkungan kedua meliuk anggun ke kiri bawah di samping kartu postingan
     path.cubicTo(
-      size.width * 0.44,
-      size.height * 0.84,
-      size.width * 0.08,
-      size.height * 0.92,
+      size.width * 0.38,
+      size.height * 0.66,
+      size.width * 0.16,
+      size.height * 0.82,
       0,
-      size.height,
+      size.height * 0.90,
     );
 
     path.close();
@@ -926,6 +966,6 @@ class _HeaderWavePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _HeaderWavePainter oldDelegate) =>
+  bool shouldRepaint(covariant _HeaderGreenCurvePainter oldDelegate) =>
       oldDelegate.color != color;
 }

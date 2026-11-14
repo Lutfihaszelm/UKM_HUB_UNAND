@@ -7,6 +7,7 @@ import '../../screens/not_found_screen.dart';
 import '../../screens/detail_screen.dart';
 import '../../screens/catatan_form_screen.dart';
 import '../../screens/post_detail_screen.dart';
+import '../../screens/profile_screen.dart';
 import '../../models/ukm.dart';
 import '../widgets/coming_soon_screen.dart';
 
@@ -20,6 +21,7 @@ class AppRoutes {
   static const String detail = '/detail';
   static const String catatanForm = '/catatan-form';
   static const String postDetail = '/post-detail';
+  static const String profile = '/profile';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -60,6 +62,13 @@ class AppRoutes {
       case postDetail:
         return MaterialPageRoute<void>(
           builder: (_) => const PostDetailScreen(),
+          settings: settings,
+        );
+      case profile:
+        final args = settings.arguments;
+        final isCurrentUser = args is bool ? args : true;
+        return MaterialPageRoute<void>(
+          builder: (_) => ProfileScreen(isCurrentUser: isCurrentUser),
           settings: settings,
         );
       default:

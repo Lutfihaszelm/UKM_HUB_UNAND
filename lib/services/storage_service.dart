@@ -1,7 +1,7 @@
 // lib/services/storage_service.dart
 // ===========================================================================
 // StorageService — Persistensi Data Lokal (shared_preferences + JSON)
-// Menyimpan: data login, komentar, like postingan, like komentar, laporan.
+// Menyimpan: data login, komentar, like postingan, like komentar, laporan
 // ===========================================================================
 
 import 'dart:convert';
@@ -17,6 +17,13 @@ class StorageService {
   static const _kEmail         = 'auth_email';
   static const _kAvatarInitial = 'auth_avatar_initial';
 
+  // ─── Profile persistence keys ─────────────────────────────────────────────
+  static const _kProfileImage      = 'profile_image_path';
+  static const _kProfileBio        = 'profile_bio';
+  static const _kProfileBirthDate  = 'profile_birth_date';
+  static const _kProfileBirthPlace = 'profile_birth_place';
+  static const _kProfileAddress    = 'profile_address';
+
   static const _kPostLiked    = 'post_liked_'; // + postId
   static const _kPostLikeCount = 'post_like_count_'; // + postId
 
@@ -29,10 +36,19 @@ class StorageService {
   // ─── Instance ────────────────────────────────────────────────────────────
   late SharedPreferences _prefs;
 
+  // ─── Theme keys ──────────────────────────────────────────────────────────────
+  static const _kIsDarkMode = 'ui_is_dark_mode';
+
   /// Harus dipanggil satu kali di main() sebelum runApp.
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
   }
+
+  /// Get the saved dark‑mode preference (default false).
+  bool get isDarkMode => _prefs.getBool(_kIsDarkMode) ?? false;
+
+  /// Persist the dark‑mode choice.
+  Future<void> setDarkMode(bool value) async => await _prefs.setBool(_kIsDarkMode, value);
 
   // ===========================================================================
   // AUTH
@@ -60,6 +76,52 @@ class StorageService {
   String get username  => _prefs.getString(_kUsername) ?? 'Pengguna';
   String get email     => _prefs.getString(_kEmail) ?? '';
   String get avatarInitial => _prefs.getString(_kAvatarInitial) ?? 'U';
+
+  /// Mengambil nama pengguna dari email atau username.
+  /// Contoh: farrel@unand.ac.id -> farrel
+  String get displayName {
+    final em = email.trim();
+    if (em.isNotEmpty && em.contains('@')) {
+      return em.split('@').first;
+    } else if (em.isNotEmpty) {
+      return em;
+    }
+    final uname = username.trim();
+    if (uname.isNotEmpty && uname != 'Pengguna') {
+      return uname;
+    }
+    return 'farrel';
+  }
+
+  // ─── Profile Getters & Setters ───────────────────────────────────────────
+  String get profileImagePath =>
+      _prefs.getString(_kProfileImage) ?? 'assets/images/lutfi_profile.jpg';
+  Future<void> setProfileImagePath(String path) async {
+    await _prefs.setString(_kProfileImage, path);
+  }
+
+  String get profileBio => _prefs.getString(_kProfileBio) ?? '';
+  Future<void> setProfileBio(String bio) async {
+    await _prefs.setString(_kProfileBio, bio);
+  }
+
+  String get profileBirthDate =>
+      _prefs.getString(_kProfileBirthDate) ?? '31 Januari 2006';
+  Future<void> setProfileBirthDate(String val) async {
+    await _prefs.setString(_kProfileBirthDate, val);
+  }
+
+  String get profileBirthPlace =>
+      _prefs.getString(_kProfileBirthPlace) ?? 'Padang';
+  Future<void> setProfileBirthPlace(String val) async {
+    await _prefs.setString(_kProfileBirthPlace, val);
+  }
+
+  String get profileAddress =>
+      _prefs.getString(_kProfileAddress) ?? 'Padang, Sumatera Barat';
+  Future<void> setProfileAddress(String val) async {
+    await _prefs.setString(_kProfileAddress, val);
+  }
 
   // ===========================================================================
   // LIKE POSTINGAN
