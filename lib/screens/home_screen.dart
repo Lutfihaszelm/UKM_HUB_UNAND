@@ -25,6 +25,36 @@ class _HomeScreenState extends State<HomeScreen> {
   String _errorMessage = '';
   final bool _simulateError = false;
 
+  // Post Carousel State
+  late final PageController _postController;
+  int _currentPostIndex = 0;
+
+  // Data Banner Slider (Menggunakan aset-aset asli UNAND di assets/images/)
+  final List<_BannerItem> _banners = const [
+    _BannerItem(
+      imageAsset: 'assets/images/bemkm.jpg',
+      badgeText: 'BEM KM UNAND',
+      logoAsset: 'assets/images/logounand.jpg',
+    ),
+    _BannerItem(
+      imageAsset: 'assets/images/fotoaiesec.jpg',
+      badgeText: 'AIESEC UNAND',
+      logoAsset: 'assets/images/logoaiesec.jpg',
+    ),
+    _BannerItem(
+      imageAsset: 'assets/images/firetech.jpeg',
+      badgeText: 'NEO TELEMETRI',
+      logoAsset: 'assets/images/logounand.jpg',
+    ),
+    _BannerItem(
+      imageAsset: 'assets/images/mapala.jpeg',
+      badgeText: 'MAPALA UNAND',
+      logoAsset: 'assets/images/mapalalogo.png',
+    ),
+  ];
+
+  // Data Postingan (Sesuai mockup & data kampus terkini)
+  late final List<CampusPost> _posts;
   int _selectedTabIndex = 0;
 
   @override
