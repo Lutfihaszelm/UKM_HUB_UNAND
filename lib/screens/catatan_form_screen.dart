@@ -45,7 +45,7 @@ class _CatatanFormScreenState extends State<CatatanFormScreen> {
     final Color textColor = isDarkMode ? Colors.white : const Color(0xFF141B2B);
     final Color subtextColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
     final Color borderColor = isDarkMode ? const Color(0xFF334155) : const Color(0xFFCBD5E1);
-    const Color primaryColor = Color(0xFF1B5E3C); // Hijau khas UKM Hub Unand
+    const Color primaryColor = Color(0xFF2C6E49); // Hijau khas UKM Hub Unand
     const Color errorColor = Color(0xFFDC2626); // Merah tegas untuk pesan validasi error
 
     // Gunakan Theme lokal agar tampilan terang (Putih) tidak ditimpa tema dark global

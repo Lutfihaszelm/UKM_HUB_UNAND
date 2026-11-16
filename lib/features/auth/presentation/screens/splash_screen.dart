@@ -41,7 +41,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-backgroundColor: Colors.white,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SizedBox.expand(
           child: Padding(
@@ -63,12 +63,11 @@ backgroundColor: Colors.white,
                     ),
                     children: const [
                       TextSpan(
-
-                        text: 'MyUKM',
+                        text: 'MYPKM',
                         style: TextStyle(fontWeight: FontWeight.w800),
                       ),
                       TextSpan(
-                        text: 'Unand',
+                        text: 'UNAND',
                         style: TextStyle(
                           color: Color(0xFF2E7D32),
                           fontWeight: FontWeight.w700,
@@ -84,6 +83,23 @@ backgroundColor: Colors.white,
                     color: AppColors.textSecondary,
                   ),
                   textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceBadge,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                    border: Border.all(color: const Color(0xFFC8E6C9)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.school_rounded, size: 14, color: AppColors.primaryGreenDark),
+                      const SizedBox(width: 6),
+                      Text('Universitas Andalas', style: AppTextStyles.badge),
+                    ],
+                  ),
                 ),
                 const Spacer(flex: 4),
                 AnimatedBuilder(

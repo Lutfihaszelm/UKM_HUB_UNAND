@@ -45,4 +45,50 @@ class Validators {
  if (number < 1 || number > 5) return 'Rating harus di antara 1 sampai 5';
  return null;
  }
+
+  // ---------- Validator form Open Recruitment (Modul 3) ----------
+
+  // Batas panjang disamakan dengan aturan field di API contract.
+  static String? _lengthBetween(
+    String? value,
+    int min,
+    int max,
+    String fieldName,
+  ) {
+    final requiredError = requiredField(value, fieldName: fieldName);
+    if (requiredError != null) return requiredError;
+    final length = value!.trim().length;
+    if (length < min) return 'Minimal $min karakter (sekarang $length)';
+    if (length > max) return 'Maksimal $max karakter (sekarang $length)';
+    return null;
+  }
+
+  static String? name(String? value) => _lengthBetween(value, 3, 100, 'Nama');
+
+  static String? prodi(String? value) =>
+      _lengthBetween(value, 2, 100, 'Program studi');
+
+  static String? nim(String? value) {
+    final requiredError = requiredField(value, fieldName: 'NIM');
+    if (requiredError != null) return requiredError;
+    if (!RegExp(r'^\d{10}$').hasMatch(value!.trim())) {
+      return 'NIM harus 10 digit angka';
+    }
+    return null;
+  }
+
+  /// Nomor Indonesia: 08..., 628..., atau +628...; 10 sampai 13 digit bila
+  /// diawali 08. Sama dengan CHECK `whatsapp` di API contract.
+  static String? whatsapp(String? value) {
+    final requiredError = requiredField(value, fieldName: 'No. WhatsApp');
+    if (requiredError != null) return requiredError;
+    final number = value!.trim().replaceAll(RegExp(r'[\s-]'), '');
+    if (!RegExp(r'^(\+62|62|0)8\d{8,11}$').hasMatch(number)) {
+      return 'Nomor WhatsApp tidak valid (contoh: 081234567890)';
+    }
+    return null;
+  }
+
+  static String? motivation(String? value) =>
+      _lengthBetween(value, 20, 1000, 'Motivasi');
 }

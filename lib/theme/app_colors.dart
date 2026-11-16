@@ -19,9 +19,19 @@ class AppColors {
 
   // Brand Green (Emerald Unand)
   static const Color primaryGreenLight = Color(0xFF2E7D32);
-  static const Color primaryGreenDark = Color(0xFF1B5E3C);
-  static const Color accentGreen = Color(0xFF1B5E3C);
-  static const Color primary = Color(0xFF1B5E3C);
+  static const Color primaryGreenDark = Color(0xFF2C6E49);
+  static const Color accentGreen = Color(0xFF2C6E49);
+  static const Color primary = Color(0xFF2C6E49);
+
+  // Brand utama yang disepakati tim (hijau #2C6E49 + putih)
+  static const Color brandGreen = Color(0xFF2C6E49);
+  static const Color brandBackground = Color(0xFFE8F0EB);
+  static const Color brandShadow = Color.fromRGBO(44, 110, 73, 0.5);
+
+  // Modul 3 (desain Open Recruitment)
+  static const Color actionBlue = Color(0xFF3B5BDB); // KONFIRMASI, DAFTAR SEKARANG
+  static const Color oprecFileCard = Color(0xFFF7F6F2); // kartu slot berkas
+  static const Color oprecCameraButton = Color(0xFFC5D5CA);
 
   // Text
   static const Color textPrimary = Color(0xFF0F172A); // Deep slate / charcoal
@@ -46,6 +56,6 @@ class AppColors {
   static const LinearGradient primaryButtonGradient = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
-    colors: [Color(0xFF2E7D32), Color(0xFF1B5E3C)],
+    colors: [Color(0xFF2E7D32), Color(0xFF2C6E49)],
   );
 }

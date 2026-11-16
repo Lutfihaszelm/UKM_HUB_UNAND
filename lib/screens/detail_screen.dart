@@ -30,7 +30,7 @@ class _DetailScreenState extends State<DetailScreen> {
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
-    const primaryColor = Color(0xFF1B5E3C);
+    const primaryColor = Color(0xFF2C6E49);
 
     return Scaffold(
       backgroundColor: Colors.white,

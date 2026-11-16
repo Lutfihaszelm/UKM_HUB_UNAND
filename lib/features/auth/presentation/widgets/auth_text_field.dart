@@ -4,7 +4,7 @@ import '../../../../theme/app_colors.dart';
 import '../../../../theme/app_spacing.dart';
 import '../../../../theme/app_text_styles.dart';
 
-/// Labeled input field matching both Light & Dark Theme
+/// Labeled input field matching the Clean White Figma design
 class AuthTextField extends StatelessWidget {
   const AuthTextField({
     super.key,
