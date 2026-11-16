@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
-import '../../screens/home_screen.dart';
-import '../../screens/not_found_screen.dart';
-import '../../screens/detail_screen.dart';
-import '../../screens/catatan_form_screen.dart';
-import '../../screens/post_detail_screen.dart';
-import '../../models/ukm.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/jelajahi_ukm/models/post.dart';
+import '../../features/jelajahi_ukm/models/ukm.dart' as modul1;
+import '../../features/jelajahi_ukm/presentation/screens/feed_screen.dart';
+import '../../features/jelajahi_ukm/presentation/screens/notification_screen.dart';
+import '../../features/jelajahi_ukm/presentation/screens/ukm_detail_screen.dart';
+import '../../features/jelajahi_ukm/presentation/screens/ukm_post_detail_screen.dart';
 import '../../features/oprec/data/oprec_providers.dart';
 import '../../features/oprec/models/oprec_post.dart';
 import '../../features/oprec/presentation/oprec_theme.dart';
 import '../../features/oprec/presentation/screens/oprec_detail_screen.dart';
+import '../../models/ukm.dart';
+import '../../screens/catatan_form_screen.dart';
+import '../../screens/detail_screen.dart';
+import '../../screens/home_screen.dart';
+import '../../screens/not_found_screen.dart';
+import '../../screens/post_detail_screen.dart';
+import '../../screens/profile_screen.dart';
 import '../widgets/coming_soon_screen.dart';
 
 class AppRoutes {
@@ -25,7 +32,14 @@ class AppRoutes {
   static const String detail = '/detail';
   static const String catatanForm = '/catatan-form';
   static const String postDetail = '/post-detail';
+  static const String profile = '/profile';
+
+  // Modul 1: Direktori, Feed, dan Notifikasi UKM.
   static const String oprecDetail = '/oprec-detail';
+  static const String ukmDetail = '/ukm-detail';
+  static const String feed = '/feed';
+  static const String notifications = '/notifications';
+  static const String ukmPostDetail = '/ukm-post-detail';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -83,6 +97,42 @@ class AppRoutes {
       case postDetail:
         return MaterialPageRoute<void>(
           builder: (_) => const PostDetailScreen(),
+          settings: settings,
+        );
+      case profile:
+        final args = settings.arguments;
+        final isCurrentUser = args is bool ? args : true;
+        return MaterialPageRoute<void>(
+          builder: (_) => ProfileScreen(isCurrentUser: isCurrentUser),
+          settings: settings,
+        );
+      // ── Modul 1: Direktori & Feed UKM ──────────────────────────────────────
+      case ukmDetail:
+        final args = settings.arguments;
+        if (args is modul1.Ukm) {
+          return MaterialPageRoute<void>(
+            builder: (_) => UkmDetailScreen(ukm: args),
+            settings: settings,
+          );
+        }
+        return null;
+      case ukmPostDetail:
+        final args = settings.arguments;
+        if (args is Post) {
+          return MaterialPageRoute<void>(
+            builder: (_) => UkmPostDetailScreen(post: args),
+            settings: settings,
+          );
+        }
+        return null;
+      case feed:
+        return MaterialPageRoute<void>(
+          builder: (_) => const FeedScreen(),
+          settings: settings,
+        );
+      case notifications:
+        return MaterialPageRoute<void>(
+          builder: (_) => const NotificationScreen(),
           settings: settings,
         );
       default:
