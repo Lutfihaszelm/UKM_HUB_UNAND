@@ -54,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _BannerItem(
       imageAsset: 'assets/images/firetech.jpeg',
       badgeText: 'NEO TELEMETRI',
-      logoAsset: 'assets/images/logoneo.png',
+      logoAsset: 'assets/images/logounand.jpg',
     ),
     _BannerItem(
       imageAsset: 'assets/images/mapala.jpeg',
