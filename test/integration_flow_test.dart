@@ -18,16 +18,19 @@ void _ignoreOverflow() {
 }
 
 Widget _app() => ProviderScope(
-      child: MaterialApp(
-        home: const HomeScreen(),
-        onGenerateRoute: AppRoutes.onGenerateRoute,
-      ),
-    );
+  child: MaterialApp(
+    home: const HomeScreen(),
+    onGenerateRoute: AppRoutes.onGenerateRoute,
+  ),
+);
 
 void main() {
   setUp(() {
     final binding = TestWidgetsFlutterBinding.ensureInitialized();
-    binding.platformDispatcher.views.first.physicalSize = const Size(1080, 2400);
+    binding.platformDispatcher.views.first.physicalSize = const Size(
+      1080,
+      2400,
+    );
     binding.platformDispatcher.views.first.devicePixelRatio = 3.0;
   });
 
@@ -40,21 +43,28 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Jelajahi UKM'), findsOneWidget);
-    expect(find.text('20 UKM'), findsOneWidget);
+    expect(find.text('Cari Passion Anda Disini'), findsOneWidget);
+    expect(find.text('AIESEC'), findsOneWidget);
   });
 
-  testWidgets('Kartu oprec di Home membuka Detail Oprec lalu Form (Modul 3)',
-      (tester) async {
+  testWidgets('Kartu oprec di Home membuka Detail Oprec lalu Form (Modul 3)', (
+    tester,
+  ) async {
     _ignoreOverflow();
     await tester.pumpWidget(_app());
     await tester.pump(const Duration(seconds: 3));
 
     final oprecTitle = find.text('Join AIESEC 2026');
-    await tester.scrollUntilVisible(oprecTitle, 300,
-        scrollable: find
-            .descendant(
-                of: find.byType(ListView), matching: find.byType(Scrollable))
-            .first);
+    await tester.scrollUntilVisible(
+      oprecTitle,
+      300,
+      scrollable: find
+          .descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Lihat Detail').first);
     await tester.tap(find.text('Lihat Detail').first);
@@ -73,14 +83,20 @@ void main() {
       expect(Validators.name('ab'), 'Minimal 3 karakter (sekarang 2)');
       expect(Validators.nim('12345'), 'NIM harus 10 digit angka');
       expect(Validators.nim('2411522010'), isNull);
-      expect(Validators.motivation('pendek'), 'Minimal 20 karakter (sekarang 6)');
+      expect(
+        Validators.motivation('pendek'),
+        'Minimal 20 karakter (sekarang 6)',
+      );
     });
 
     test('prodi dan batas atas sesuai API contract', () {
       expect(Validators.prodi(''), 'Program studi wajib diisi');
       expect(Validators.prodi('S'), 'Minimal 2 karakter (sekarang 1)');
       expect(Validators.prodi('Sistem Informasi'), isNull);
-      expect(Validators.name('a' * 101), 'Maksimal 100 karakter (sekarang 101)');
+      expect(
+        Validators.name('a' * 101),
+        'Maksimal 100 karakter (sekarang 101)',
+      );
       expect(Validators.motivation('a' * 1000), isNull);
     });
 
@@ -93,8 +109,10 @@ void main() {
       expect(Validators.whatsapp('0812345678901'), isNull); // 13 digit
       expect(Validators.whatsapp('081234567'), isNotNull); // 9 digit
       expect(Validators.whatsapp('08123456789012'), isNotNull); // 14 digit
-      expect(Validators.whatsapp('0212345678'),
-          'Nomor WhatsApp tidak valid (contoh: 081234567890)');
+      expect(
+        Validators.whatsapp('0212345678'),
+        'Nomor WhatsApp tidak valid (contoh: 081234567890)',
+      );
     });
   });
 }
